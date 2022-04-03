@@ -1,0 +1,50 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "run server",
+        "type": "shell",
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": [
+          "$go"
+        ],
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared",
+          "showReuseMessage": true,
+          "clear": true
+        },
+        "linux": {
+          "command": [
+            "cd ${workspaceFolder}/server &&",
+            "go build -v ./ &&",
+            "if [ -f $GOPATH/.env ] ; then source $GOPATH/.env ; fi &&",
+            "./server",
+          ]
+        },
+        "osx": {
+          "command": [
+            "cd ${workspaceFolder}/server &&",
+            "source ~/.bash_profile &&",
+            "go build -v ./ &&",
+            "if [ -f $GOPATH/.env ] ; then source $GOPATH/.env ; fi &&",
+            "./server",
+          ]
+        },
+        "windows": {
+          "command": [
+            "cd ${workspaceFolder}/server &&",
+            "go build -v ./ &&",
+            "server.exe",
+          ]
+        }
+      }
+    ]
+  }
