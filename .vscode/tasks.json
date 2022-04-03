@@ -31,8 +31,8 @@
         },
         "osx": {
           "command": [
-            "cd ${workspaceFolder}/server &&",
-            "source ~/.bash_profile &&",
+            "cd ${workspaceFolder}; source env &&",
+            "cd server &&",
             "go build -v ./ &&",
             "if [ -f $GOPATH/.env ] ; then source $GOPATH/.env ; fi &&",
             "./server",
