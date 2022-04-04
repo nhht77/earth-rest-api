@@ -2,6 +2,8 @@ package msql
 
 import (
 	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -44,4 +46,25 @@ func CreateTableExists(statement string, db *sql.DB) bool {
 		return err == nil
 	}
 	return false
+}
+
+func FormatFields(field ...string) string {
+	return strings.Join(field, ", ")
+}
+
+func JSONScan(src, dest interface{}) error {
+	if src == nil {
+		return nil
+	}
+	switch src.(type) {
+	case []byte:
+		return json.Unmarshal(src.([]byte), dest)
+	case sql.RawBytes:
+		return json.Unmarshal(src.(sql.RawBytes), dest)
+	}
+	return fmt.Errorf("JSONScan: cannot read %T from %T", dest, src)
+}
+
+func JSONValue(v interface{}) (driver.Value, error) {
+	return json.Marshal(v)
 }

@@ -9,4 +9,6 @@ require (
 	github.com/lib/pq v1.10.4 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	golang.org/x/sys v0.0.0-20220403020550-483a9cbc67c0 // indirect
+	google.golang.org/protobuf v1.28.0 // indirect
+	gopkg.in/satori/go.uuid.v1 v1.2.0 // indirect
 )
