@@ -22,15 +22,14 @@ type Database struct {
 }
 
 func (db *Database) Initialize(c *Config) error {
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host,
-		port,
-		c.Username,
-		c.Password,
-		c.Database,
-	)
 
-	result, err := sql.Open("postgres", psqlInfo)
+	if err := c.ValidateConfig(); err != nil {
+		return err
+	}
+
+	Log.Infof("[postgre] Database Source: %s", c.DatabaseSourcePrintable(host, port))
+
+	result, err := sql.Open("postgres", c.DatabaseSource(host, port))
 	if err != nil {
 		return err
 	}

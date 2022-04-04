@@ -13,17 +13,12 @@ var (
 	AppConfig = &Config{}
 )
 
-func init() {
+func init_resource() {
 
 	// init logger
 	init_logger()
 
 	AppConfig.ReadDefault()
-
-	Log.Info(
-		"Database AppConfig: ",
-		AppConfig.Printable(),
-	)
 
 	if err := DB.Initialize(AppConfig); err != nil {
 		release_resource()
@@ -32,7 +27,9 @@ func init() {
 	}
 }
 
-func main() {}
+func main() {
+	init_resource()
+}
 
 func release_resource() {
 	DB.Close()

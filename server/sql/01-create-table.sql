@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS country (
 CREATE TABLE IF NOT EXISTS city (
     index bigserial PRIMARY KEY,
     continent_index bigint REFERENCES continent(index),
-    country_index bigint REFERENCES country(index),
+    country_uuid uuid NOT NULL,
     uuid uuid NOT NULL UNIQUE,
     name text,
     created timestamp DEFAULT NOW(),
