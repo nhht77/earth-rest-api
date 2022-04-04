@@ -31,8 +31,8 @@
         },
         "osx": {
           "command": [
-            "cd ${workspaceFolder}/server &&",
-            "source ~/.bash_profile &&",
+            "cd ${workspaceFolder}; source env &&",
+            "cd server &&",
             "go build -v ./ &&",
             "if [ -f $GOPATH/.env ] ; then source $GOPATH/.env ; fi &&",
             "./server",
@@ -43,6 +43,48 @@
             "cd ${workspaceFolder}/server &&",
             "go build -v ./ &&",
             "server.exe",
+          ]
+        }
+      },
+      {
+        "label": "run test",
+        "type": "shell",
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": [
+          "$go"
+        ],
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared",
+          "showReuseMessage": true,
+          "clear": true
+        },
+        "linux": {
+          "command": [
+            "cd ${workspaceFolder}/server &&",
+            "go build -v ./ &&",
+            "if [ -f $GOPATH/.env ] ; then source $GOPATH/.env ; fi &&",
+            "go test -v",
+          ]
+        },
+        "osx": {
+          "command": [
+            "cd ${workspaceFolder}; source env &&",
+            "cd server &&",
+            "go build -v ./ &&",
+            "go test -v",
+          ]
+        },
+        "windows": {
+          "command": [
+            "cd ${workspaceFolder}/server &&",
+            "go build -v ./ &&",
+            "go test -v",
           ]
         }
       }
