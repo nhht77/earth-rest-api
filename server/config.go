@@ -65,9 +65,9 @@ func (c *Config) DatabaseSourcePrintable(host string, port string) string {
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		host,
 		port,
-		c.Username[0:3],
+		c.Username[0:3]+"...",
 		"****",
-		c.Database[0:3],
+		c.Database[0:3]+"...",
 	)
 }
 
