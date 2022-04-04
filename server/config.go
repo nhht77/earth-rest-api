@@ -1,6 +1,10 @@
 package main
 
-import "os"
+import (
+	"errors"
+	"fmt"
+	"os"
+)
 
 type Config struct {
 	Username string `json:"username"`
@@ -32,6 +36,39 @@ func (c *Config) ReadTestDefault() {
 	if len(c.Password) == 0 {
 		c.Password = os.Getenv("TEST_PASSWORD")
 	}
+}
+
+func (c *Config) ValidateConfig() error {
+	if len(c.Database) == 0 {
+		return errors.New("Config.Database")
+	}
+	if len(c.Username) == 0 {
+		return errors.New("Config.Username")
+	}
+	if len(c.Password) == 0 {
+		return errors.New("Config.Password")
+	}
+	return nil
+}
+
+func (c *Config) DatabaseSource(host string, port string) string {
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		host,
+		port,
+		c.Username,
+		c.Password,
+		c.Database,
+	)
+}
+
+func (c *Config) DatabaseSourcePrintable(host string, port string) string {
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		host,
+		port,
+		c.Username[0:3],
+		"****",
+		c.Database[0:3],
+	)
 }
 
 func (c *Config) Printable() *Config {
