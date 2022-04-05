@@ -48,7 +48,6 @@ func ContinentOptionsFromQuery(r *http.Request) (ContinentQueryOptions, error) {
 	if err != nil {
 		return options, err
 	}
-	Log.Info("ContinentOptionsFromQuery types", types)
 	if len(types) > 0 {
 		for _, v := range types {
 			options.Types = append(options.Types, pkg_v1.ContinentType(v))

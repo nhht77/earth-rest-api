@@ -152,10 +152,10 @@ func CheckOperation(op string, err error, started time.Time) bool {
 
 	hasError := err != nil && err != sql.ErrNoRows
 	if hasError {
-		Log.Errorf("DB"+".%s error: %s (%s)", op, err.Error(), spent)
+		Log.Errorf("[postgre] DB.%s error: %s (%s)", op, err.Error(), spent)
 		return true
 	}
 
-	Log.Infof("DB.%s %s", op, spent)
+	Log.Infof("[postgre] DB.%s %s", op, spent)
 	return hasError == false
 }

@@ -50,13 +50,15 @@ func QueryList(r *http.Request, key string, separator string) []string {
 		return []string{}
 	}
 	str := r.URL.Query().Get(key)
-	Log.Infof("QueryList key %s separator %s str %s", key, separator, str)
-
-	if len(str) > 0 && strings.Contains(str, separator) {
-		out := strings.Split(str, separator)
-		for i, _ := range out {
-			out[i] = strings.TrimSpace(out[i])
+	if len(str) > 0 {
+		if strings.Contains(strings.ToLower(str), strings.ToLower(separator)) {
+			out := strings.Split(str, separator)
+			for i, _ := range out {
+				out[i] = strings.TrimSpace(out[i])
+			}
 			return out
+		} else {
+			return []string{str}
 		}
 	}
 	return []string{}
@@ -64,10 +66,7 @@ func QueryList(r *http.Request, key string, separator string) []string {
 
 func QueryIntList(r *http.Request, key string, separator string) ([]int, error) {
 	out := []int{}
-	Log.Infof("QueryIntList key %s separator %s", key, separator)
-
 	values := QueryList(r, key, separator)
-	Log.Info("QueryIntList values ", values)
 	for _, v := range values {
 		num, err := strconv.Atoi(v)
 		if err != nil {

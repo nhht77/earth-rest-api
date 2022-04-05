@@ -74,20 +74,14 @@ func HandleUpdateContinent(w http.ResponseWriter, r *http.Request) {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
 	}
-	Log.Info("HandleUpdateContinent #1", continent.Uuid)
-
 	if !muuid.UUIDValid(continent.Uuid) {
 		mhttp.WriteBadRequest(w, errors.New("Invalid uuid").Error())
 		return
 	}
-	Log.Info("HandleUpdateContinent #2")
-
 	if err := continent.ValidateUpdate(); err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
 	}
-
-	Log.Info("HandleUpdateContinent #3")
 
 	result, err := DB.UpdateContinent(nil, continent)
 	if err != nil {
