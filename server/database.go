@@ -144,16 +144,18 @@ func DatabaseNoResults(err error) bool {
 	return err == sql.ErrNoRows
 }
 
-func (db *Database) CheckOperation(op string, err error, started time.Time) bool {
+func CheckOperation(op string, err error, started time.Time) bool {
 	spent := ""
 	if !started.IsZero() {
 		spent = time.Since(started).String()
 	}
 
-	hasError := err != nil
-	if hasError && !DatabaseNoResults(err) {
-		// log error
-		Log.Error("DB"+".%s error: %s (%s)", op, err.Error(), spent)
+	hasError := err != nil && err != sql.ErrNoRows
+	if hasError {
+		Log.Errorf("DB"+".%s error: %s (%s)", op, err.Error(), spent)
+		return true
 	}
+
+	Log.Infof("DB.%s %s", op, spent)
 	return hasError == false
 }

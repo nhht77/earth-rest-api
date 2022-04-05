@@ -14,6 +14,25 @@ import (
 	mstring "github.com/nhht77/earth-rest-api/mstring"
 )
 
+////////////////////////////
+/////// Basic schema struct
+
+type DatabaseIndex uint
+
+type DB_OBJECT struct {
+	DB_INDEX DatabaseIndex `json:"-" yaml:"-"`
+}
+
+type DeletedState int
+
+const (
+	NotDeleted  DeletedState = 0
+	SoftDeleted DeletedState = 1
+)
+
+//////////////////////////
+/////// Basic DB function
+
 func ReadStatementsFromFile(file string) ([]string, error) {
 	file_path, err := filepath.Abs(fmt.Sprintf("./sql/%s", file))
 	if err != nil {

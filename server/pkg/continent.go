@@ -1,32 +1,31 @@
-package continent
+package pkg_v1
 
 import (
 	"database/sql/driver"
+	"errors"
+	"time"
 
 	"github.com/nhht77/earth-rest-api/msql"
 	muuid "github.com/nhht77/earth-rest-api/muuid"
-	"google.golang.org/protobuf/types/known/timestamppb"
-)
-
-////////////////////////////
-/////// Basic schema struct
-
-type DatabaseIndex uint
-
-type DB_OBJECT struct {
-	DB_INDEX DatabaseIndex `json:"-" yaml:"-"`
-}
-
-type DeletedState int
-
-const (
-	NotDeleted  DeletedState = 0
-	SoftDeleted DeletedState = 1
 )
 
 type UserMinimal struct {
 	Email string `json:"email"`
 	Name  string `json:"name"`
+}
+
+func (user *UserMinimal) IsValid() error {
+	if user == nil {
+		return errors.New("Invalid user")
+	}
+
+	if len(user.Email) == 0 {
+		return errors.New("Invalid email")
+	}
+	if len(user.Name) == 0 {
+		return errors.New("Invalid name")
+	}
+	return nil
 }
 
 func (v *UserMinimal) Value() (driver.Value, error) {
@@ -46,6 +45,7 @@ func (v *UserMinimal) Scan(src interface{}) error {
 type ContinentType int
 
 const (
+	ContinentType_Invalid       ContinentType = 0
 	ContinentType_Asia          ContinentType = 1
 	ContinentType_Africa        ContinentType = 2
 	ContinentType_Europe        ContinentType = 3
@@ -56,19 +56,89 @@ const (
 )
 
 type Continent struct {
-	Index DatabaseIndex `json:"-" yaml:"-"`
-	Uuid  muuid.UUID    `json:"uuid"`
+	Index msql.DatabaseIndex `json:"-"`
+	Uuid  muuid.UUID         `json:"uuid"`
 
-	Name      string        `json:"string"`
+	Name      string        `json:"name"`
 	Type      ContinentType `json:"type"`
-	AreaByKm2 int           `area_by_km2`
+	AreaByKm2 float64       `json:"area_by_km2"`
 
-	Created *timestamppb.Timestamp `json:"created"`
-	Updated *timestamppb.Timestamp `json:"updated"`
+	Created time.Time `json:"created"`
+	Updated time.Time `json:"updated"`
 
 	Creator *UserMinimal `json:"creator"`
 
-	DeletedState DeletedState `json:"-"`
+	DeletedState msql.DeletedState `json:"-"`
+}
+
+func (obj *Continent) ValidateCreate() error {
+
+	// check type
+	if err := obj.IsValidContinentType(obj.Type); err != nil {
+		return err
+	}
+
+	// check name
+	if len(obj.Name) == 0 {
+		return errors.New("Invalid continent name")
+	}
+
+	// check areaByKm2
+	if obj.AreaByKm2 == 0 {
+		return errors.New("Invalid continent area by km2")
+	}
+
+	// Check for creator
+	if err := obj.Creator.IsValid(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (obj *Continent) ValidateUpdate() error {
+
+	// check type
+	if err := obj.IsValidContinentType(obj.Type); err != nil {
+		return err
+	}
+
+	// check name
+	if len(obj.Name) == 0 {
+		return errors.New("Invalid continent name")
+	}
+
+	// check areaByKm2
+	if obj.AreaByKm2 == 0 {
+		return errors.New("Invalid continent area by km2")
+	}
+
+	return nil
+}
+
+func (obj *Continent) IsValidContinentType(con_type ContinentType) error {
+
+	if con_type == ContinentType_Invalid {
+		return errors.New("Invalid continent type")
+	}
+
+	types := []ContinentType{
+		ContinentType_Asia,
+		ContinentType_Africa,
+		ContinentType_Europe,
+		ContinentType_North_America,
+		ContinentType_South_America,
+		ContinentType_Oceania,
+		ContinentType_Antarctica,
+	}
+
+	for _, iter := range types {
+		if con_type == iter {
+			return nil
+		}
+	}
+
+	return errors.New("Unsupported continent type")
 }
 
 func (obj *Continent) DatabaseFields() string {
