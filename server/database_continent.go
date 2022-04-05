@@ -299,7 +299,7 @@ func (db *Database) UpdateContinent(tx *sql.Tx, continent *pkg_v1.Continent) (*p
 }
 
 // delete continent
-func (db *Database) SoftDeleteHub(tx *sql.Tx, uuid string) error {
+func (db *Database) SoftDeleteContinent(tx *sql.Tx, uuid string) error {
 
 	if _, err := muuid.UUIDFromString(uuid); err != nil {
 		return err
@@ -314,7 +314,7 @@ func (db *Database) SoftDeleteHub(tx *sql.Tx, uuid string) error {
 		msql.SoftDeleted,
 		uuid,
 	))
-	CheckOperation("SoftDeleteHub", err, started)
+	CheckOperation("SoftDeleteContinent", err, started)
 	if err != nil {
 		return err
 	}
