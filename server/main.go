@@ -29,6 +29,12 @@ func init_resource() {
 
 func main() {
 	init_resource()
+
+	if err := RunHTTP(); err != nil {
+		release_resource()
+		Log.Fatalf("[mhttp] RunHTTP error %s", err.Error())
+		return
+	}
 }
 
 func release_resource() {
