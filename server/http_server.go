@@ -25,6 +25,12 @@ func RunHTTP() error {
 	router.HandleFunc("/api/v1/country/update", HandleUpdateCountry).Methods("PUT")
 	router.HandleFunc("/api/v1/country/delete", HandleDeleteCountry).Methods("DELETE")
 
+	router.HandleFunc("/api/v1/cities", HandleCities).Methods("GET")
+	router.HandleFunc("/api/v1/city", HandleCity).Methods("GET")
+	router.HandleFunc("/api/v1/city/create", HandleCreateCity).Methods("POST")
+	router.HandleFunc("/api/v1/city/update", HandleUpdateCity).Methods("PUT")
+	router.HandleFunc("/api/v1/city/delete", HandleDeleteCity).Methods("DELETE")
+
 	return ListenAndServe(":8080", router)
 }
 
