@@ -10,15 +10,15 @@ import (
 	pkg_v1 "github.com/nhht77/earth-rest-api/server/pkg"
 )
 
-func HandleContinents(w http.ResponseWriter, r *http.Request) {
+func HandleCountries(w http.ResponseWriter, r *http.Request) {
 
-	options, err := ContinentOptionsFromQuery(r)
+	options, err := CountryOptionsFromQuery(r)
 	if err != nil {
 		mhttp.WriteBadRequest(w, fmt.Sprintf("Invalid query: %s", err.Error()))
 		return
 	}
 
-	results, err := DB.ContinentsByOptions(options)
+	results, err := DB.CountriesByOptions(options)
 	if err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
@@ -27,7 +27,7 @@ func HandleContinents(w http.ResponseWriter, r *http.Request) {
 	mhttp.WriteBodyJSON(w, results)
 }
 
-func HandleContinent(w http.ResponseWriter, r *http.Request) {
+func HandleCountry(w http.ResponseWriter, r *http.Request) {
 
 	c_uuid := mhttp.Query(r, "uuid")
 	if _, err := muuid.UUIDFromString(c_uuid); err != nil {
@@ -35,7 +35,7 @@ func HandleContinent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := DB.ContinentByUuid(nil, c_uuid)
+	result, err := DB.CountryByUuid(nil, c_uuid)
 	if err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
@@ -44,9 +44,9 @@ func HandleContinent(w http.ResponseWriter, r *http.Request) {
 	mhttp.WriteBodyJSON(w, result)
 }
 
-func HandleCreateContinent(w http.ResponseWriter, r *http.Request) {
+func HandleCreateCountry(w http.ResponseWriter, r *http.Request) {
 
-	continent := &pkg_v1.Continent{}
+	continent := &pkg_v1.Country{}
 
 	if err := mhttp.ReadBodyJSON(r, &continent); err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
@@ -58,7 +58,7 @@ func HandleCreateContinent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := DB.CreateContinent(nil, continent)
+	result, err := DB.CreateCountry(nil, continent)
 	if err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
@@ -67,9 +67,9 @@ func HandleCreateContinent(w http.ResponseWriter, r *http.Request) {
 	mhttp.WriteBodyJSON(w, result)
 }
 
-func HandleUpdateContinent(w http.ResponseWriter, r *http.Request) {
+func HandleUpdateCountry(w http.ResponseWriter, r *http.Request) {
 
-	continent := &pkg_v1.Continent{}
+	continent := &pkg_v1.Country{}
 	if err := mhttp.ReadBodyJSON(r, &continent); err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
@@ -83,7 +83,7 @@ func HandleUpdateContinent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := DB.UpdateContinent(nil, continent)
+	result, err := DB.UpdateCountry(nil, continent)
 	if err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
@@ -92,7 +92,7 @@ func HandleUpdateContinent(w http.ResponseWriter, r *http.Request) {
 	mhttp.WriteBodyJSON(w, result)
 }
 
-func HandleDeleteContinent(w http.ResponseWriter, r *http.Request) {
+func HandleDeleteCountry(w http.ResponseWriter, r *http.Request) {
 	var query_uuid = mhttp.Query(r, "uuid")
 
 	if _, err := muuid.UUIDFromString(query_uuid); err != nil {
@@ -100,7 +100,7 @@ func HandleDeleteContinent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := DB.SoftDeleteContinent(nil, query_uuid); err != nil {
+	if err := DB.SoftDeleteCountry(nil, query_uuid); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
