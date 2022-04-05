@@ -98,9 +98,7 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) ([]*pkg_v1.C
 			&curr.ContinentIndex,
 			&curr.Uuid,
 			&curr.Name,
-			&curr.PhoneCode,
-			&curr.ISOCode,
-			&curr.Currency,
+			&curr.Details,
 			&curr.Creator,
 			&curr.Created,
 			&updated,
@@ -162,9 +160,7 @@ func (db *Database) CountryByUuid(tx *sql.Tx, uuid string) (*pkg_v1.Country, err
 		&result.ContinentIndex,
 		&result.Uuid,
 		&result.Name,
-		&result.PhoneCode,
-		&result.ISOCode,
-		&result.Currency,
+		&result.Details,
 		&result.Creator,
 		&result.Created,
 		&updated,
@@ -187,13 +183,13 @@ func (db *Database) IsCountryExist(tx *sql.Tx, country *pkg_v1.Country) (exist b
 
 	var query = fmt.Sprintf(
 		`SELECT uuid FROM country
-		WHERE phone_code = '%s'
-		OR iso_code = '%s'
-		OR currency = '%s'
+		WHERE details->>'phone_code' = '%s'
+		OR details->>'iso_code' = '%s'
+		OR details->>'currency' = '%s'
 		AND deleted_state != %d `,
-		country.PhoneCode,
-		country.ISOCode,
-		country.Currency,
+		country.Details.PhoneCode,
+		country.Details.ISOCode,
+		country.Details.Currency,
 		msql.SoftDeleted,
 	)
 	if muuid.UUIDValid(country.Uuid) {
@@ -224,14 +220,13 @@ func (db *Database) CreateCountry(tx *sql.Tx, country *pkg_v1.Country) (*pkg_v1.
 		started         = time.Now()
 		uuid            = muuid.NewUUID()
 		json_creator, _ = json.Marshal(country.Creator)
+		json_details, _ = json.Marshal(country.Details)
 
 		fields = []string{
 			"continent_index",
 			"uuid",
 			"name",
-			"phone_code",
-			"iso_code",
-			"currency",
+			"details",
 			"creator",
 		}
 	)
@@ -244,16 +239,13 @@ func (db *Database) CreateCountry(tx *sql.Tx, country *pkg_v1.Country) (*pkg_v1.
 			`INSERT INTO country(%s)
 			VALUES(
 				%d, '%s', '%s',
-				'%s', '%s', '%s',
-				'%s'
+				'%s', '%s'
 			)`,
 			mstring.FormatFields(fields...),
 			continent_index,
 			uuid.String(),
 			country.Name,
-			country.PhoneCode,
-			country.ISOCode,
-			country.Currency,
+			json_details,
 			json_creator,
 		))
 	CheckOperation("CreateCountry", err, started)
@@ -284,22 +276,19 @@ func (db *Database) UpdateCountry(tx *sql.Tx, country *pkg_v1.Country) (*pkg_v1.
 	}
 
 	var (
-		started = time.Now()
+		started         = time.Now()
+		json_details, _ = json.Marshal(country.Details)
 	)
 
 	_, err = db.Exec(tx,
 		fmt.Sprintf(
 			`UPDATE country SET
 			name='%s',
-			phone_code='%s',
-			iso_code='%s',
-			currency='%s'
+			details='%s'
 			WHERE uuid ='%s'
 			AND deleted_state != 1`,
 			country.Name,
-			country.PhoneCode,
-			country.ISOCode,
-			country.Currency,
+			json_details,
 			country.Uuid.String(),
 		))
 	CheckOperation("UpdateCountry", err, started)
