@@ -13,6 +13,12 @@ func RunHTTP() error {
 
 	router.HandleFunc("/api/v1/ping", Ping).Methods("GET")
 
+	router.HandleFunc("/api/v1/continents", HandleContinents).Methods("GET")
+	router.HandleFunc("/api/v1/continent", HandleContinent).Methods("GET")
+	router.HandleFunc("/api/v1/continent/create", HandleCreateContinent).Methods("POST")
+	router.HandleFunc("/api/v1/continent/update", HandleUpdateContinent).Methods("PUT")
+	router.HandleFunc("/api/v1/continent/delete", HandleDeleteHub).Methods("DELETE")
+
 	return ListenAndServe(":8080", router)
 }
 
@@ -29,5 +35,5 @@ func MonitorHandle(h http.Handler) http.Handler {
 }
 
 func Ping(w http.ResponseWriter, r *http.Request) {
-	mhttp.WriteBodyJSON(w, "empty string")
+	mhttp.WriteBodyJSON(w, "")
 }

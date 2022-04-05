@@ -2,8 +2,11 @@ CREATE TABLE IF NOT EXISTS continent (
     index bigserial PRIMARY KEY,
     uuid uuid NOT NULL UNIQUE,
     name text NOT NULL,
+    type smallint,
+    area_by_km2 float,
     created timestamp DEFAULT NOW(),
     updated timestamp,
+    creator jsonb,
     deleted_state smallint default 0
 );
 

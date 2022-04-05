@@ -6,7 +6,11 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
+
+var Log = logrus.New()
 
 func ReadBodyJSON(r *http.Request, dest interface{}) error {
 	body, err := ioutil.ReadAll(r.Body)
@@ -46,11 +50,15 @@ func QueryList(r *http.Request, key string, separator string) []string {
 		return []string{}
 	}
 	str := r.URL.Query().Get(key)
-	if len(str) > 0 && strings.Contains(str, separator) {
-		out := strings.Split(str, separator)
-		for i, _ := range out {
-			out[i] = strings.TrimSpace(out[i])
+	if len(str) > 0 {
+		if strings.Contains(strings.ToLower(str), strings.ToLower(separator)) {
+			out := strings.Split(str, separator)
+			for i, _ := range out {
+				out[i] = strings.TrimSpace(out[i])
+			}
 			return out
+		} else {
+			return []string{str}
 		}
 	}
 	return []string{}

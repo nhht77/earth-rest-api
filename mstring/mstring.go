@@ -1,6 +1,7 @@
 package mstring
 
 import (
+	"encoding/json"
 	"strings"
 )
 
@@ -19,4 +20,19 @@ func Between(value string, begin string, end string) string {
 		return ""
 	}
 	return value[posFirstAdjusted:posLast]
+}
+
+func ToJSON(obj interface{}) string {
+	if obj == nil {
+		return ""
+	}
+	b, err := json.MarshalIndent(obj, "", "  ")
+	if err == nil && len(b) > 0 {
+		return string(b)
+	}
+	return ""
+}
+
+func FormatFields(str ...string) string {
+	return strings.Join(str, ", ")
 }

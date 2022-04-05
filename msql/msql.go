@@ -2,6 +2,8 @@ package msql
 
 import (
 	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -11,6 +13,25 @@ import (
 
 	mstring "github.com/nhht77/earth-rest-api/mstring"
 )
+
+////////////////////////////
+/////// Basic schema struct
+
+type DatabaseIndex uint
+
+type DB_OBJECT struct {
+	DB_INDEX DatabaseIndex `json:"-" yaml:"-"`
+}
+
+type DeletedState int
+
+const (
+	NotDeleted  DeletedState = 0
+	SoftDeleted DeletedState = 1
+)
+
+//////////////////////////
+/////// Basic DB function
 
 func ReadStatementsFromFile(file string) ([]string, error) {
 	file_path, err := filepath.Abs(fmt.Sprintf("./sql/%s", file))
@@ -44,4 +65,25 @@ func CreateTableExists(statement string, db *sql.DB) bool {
 		return err == nil
 	}
 	return false
+}
+
+func FormatFields(field ...string) string {
+	return strings.Join(field, ", ")
+}
+
+func JSONScan(src, dest interface{}) error {
+	if src == nil {
+		return nil
+	}
+	switch src.(type) {
+	case []byte:
+		return json.Unmarshal(src.([]byte), dest)
+	case sql.RawBytes:
+		return json.Unmarshal(src.(sql.RawBytes), dest)
+	}
+	return fmt.Errorf("JSONScan: cannot read %T from %T", dest, src)
+}
+
+func JSONValue(v interface{}) (driver.Value, error) {
+	return json.Marshal(v)
 }
