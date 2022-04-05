@@ -14,9 +14,13 @@ CREATE TABLE IF NOT EXISTS country (
     index bigserial PRIMARY KEY,
     continent_index bigint REFERENCES continent(index),
     uuid uuid NOT NULL UNIQUE,
-    name text,
+    name text NOT NULL,
+    phone_code text NOT NULL,
+    iso_code text NOT NULL,
+    currency text NOT NULL,
     created timestamp DEFAULT NOW(),
     updated timestamp,
+    creator jsonb,
     deleted_state smallint default 0
 );
 

@@ -98,6 +98,10 @@ func (obj *Continent) ValidateCreate() error {
 
 func (obj *Continent) ValidateUpdate() error {
 
+	if !muuid.UUIDValid(obj.Uuid) {
+		return errors.New("Invalid continent uuid")
+	}
+
 	// check type
 	if err := obj.IsValidContinentType(obj.Type); err != nil {
 		return err
