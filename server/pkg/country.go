@@ -1,6 +1,7 @@
 package pkg_v1
 
 import (
+	"database/sql/driver"
 	"errors"
 	"time"
 
@@ -12,13 +13,11 @@ type Country struct {
 	Index          msql.DatabaseIndex `json:"-"`
 	ContinentIndex msql.DatabaseIndex `json:"-"`
 
-	CountryUuid muuid.UUID `json:"country_uuid"`
-	Uuid        muuid.UUID `json:"uuid"`
+	ContinentUuid muuid.UUID `json:"continent_uuid"`
+	Uuid          muuid.UUID `json:"uuid"`
 
-	Name      string `json:"name"`
-	PhoneCode string `json:"phone_code"`
-	ISOCode   string `json:"iso_code"`
-	Currency  string `json:"currency"`
+	Name    string          `json:"name"`
+	Details *CountryDetails `json:"details"`
 
 	Created time.Time `json:"created"`
 	Updated time.Time `json:"updated"`
@@ -28,22 +27,51 @@ type Country struct {
 	DeletedState msql.DeletedState `json:"-"`
 }
 
+type CountryDetails struct {
+	PhoneCode string `json:"phone_code"`
+	ISOCode   string `json:"iso_code"`
+	Currency  string `json:"currency"`
+}
+
+func (v *CountryDetails) Value() (driver.Value, error) {
+	return msql.JSONValue(v)
+}
+
+func (v *CountryDetails) Scan(src interface{}) error {
+	if src != nil && v == nil {
+		v = &CountryDetails{}
+	}
+	return msql.JSONScan(src, v)
+}
+
+func (details *CountryDetails) Validate() error {
+	if len(details.PhoneCode) == 0 {
+		return errors.New("Invalid country phone code")
+	}
+
+	if len(details.ISOCode) == 0 {
+		return errors.New("Invalid country iso code")
+	}
+
+	if len(details.Currency) == 0 {
+		return errors.New("Invalid country currency")
+	}
+
+	return nil
+}
+
 func (obj *Country) ValidateCreate() error {
 
 	if len(obj.Name) == 0 {
 		return errors.New("Invalid country name")
 	}
 
-	if len(obj.PhoneCode) == 0 {
-		return errors.New("Invalid country phone code")
+	if obj.Details == nil || obj.Creator == nil {
+		return errors.New("Empty country details || creator")
 	}
 
-	if len(obj.ISOCode) == 0 {
-		return errors.New("Invalid country iso code")
-	}
-
-	if len(obj.Currency) == 0 {
-		return errors.New("Invalid country currency")
+	if err := obj.Details.Validate(); err != nil {
+		return err
 	}
 
 	if err := obj.Creator.IsValid(); err != nil {
@@ -63,17 +91,14 @@ func (obj *Country) ValidateUpdate() error {
 		return errors.New("Invalid country name")
 	}
 
-	if len(obj.PhoneCode) == 0 {
-		return errors.New("Invalid country phone code")
+	if obj.Details == nil {
+		return errors.New("Empty country details")
 	}
 
-	if len(obj.ISOCode) == 0 {
-		return errors.New("Invalid country iso code")
+	if err := obj.Details.Validate(); err != nil {
+		return err
 	}
 
-	if len(obj.Currency) == 0 {
-		return errors.New("Invalid country currency")
-	}
 	return nil
 }
 
@@ -81,8 +106,7 @@ func (obj *Country) DatabaseFields() string {
 	return msql.FormatFields(
 		"index", "continent_index",
 		"uuid", "name",
-		"phone_code", "iso_code",
-		"currency", "creator",
+		"details", "creator",
 		"created", "updated", "deleted_state",
 	)
 }

@@ -78,6 +78,10 @@ func (obj *Continent) ValidateCreate() error {
 		return err
 	}
 
+	if obj.Creator == nil {
+		return errors.New("Empty continent creator")
+	}
+
 	// check name
 	if len(obj.Name) == 0 {
 		return errors.New("Invalid continent name")
