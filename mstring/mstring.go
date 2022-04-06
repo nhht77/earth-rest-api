@@ -3,6 +3,8 @@ package mstring
 import (
 	"encoding/json"
 	"strings"
+
+	"github.com/lib/pq"
 )
 
 func Between(value string, begin string, end string) string {
@@ -35,4 +37,30 @@ func ToJSON(obj interface{}) string {
 
 func FormatFields(str ...string) string {
 	return strings.Join(str, ", ")
+}
+
+func SliceContains(slice []string, str string) bool {
+	for _, part := range slice {
+		if part == str {
+			return true
+		}
+	}
+	return false
+}
+
+func Literal(literal string) string {
+	return pq.QuoteLiteral(literal)
+}
+
+func FormatStringValues(value ...string) string {
+	if l := len(value); l == 0 {
+		return Literal("")
+	} else if l == 1 {
+		return Literal(value[0])
+	}
+	strs := []string{}
+	for _, iter := range value {
+		strs = append(strs, Literal(iter))
+	}
+	return strings.Join(strs, ", ")
 }

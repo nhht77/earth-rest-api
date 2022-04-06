@@ -17,7 +17,19 @@ func RunHTTP() error {
 	router.HandleFunc("/api/v1/continent", HandleContinent).Methods("GET")
 	router.HandleFunc("/api/v1/continent/create", HandleCreateContinent).Methods("POST")
 	router.HandleFunc("/api/v1/continent/update", HandleUpdateContinent).Methods("PUT")
-	router.HandleFunc("/api/v1/continent/delete", HandleDeleteHub).Methods("DELETE")
+	router.HandleFunc("/api/v1/continent/delete", HandleDeleteContinent).Methods("DELETE")
+
+	router.HandleFunc("/api/v1/countries", HandleCountries).Methods("GET")
+	router.HandleFunc("/api/v1/country", HandleCountry).Methods("GET")
+	router.HandleFunc("/api/v1/country/create", HandleCreateCountry).Methods("POST")
+	router.HandleFunc("/api/v1/country/update", HandleUpdateCountry).Methods("PUT")
+	router.HandleFunc("/api/v1/country/delete", HandleDeleteCountry).Methods("DELETE")
+
+	router.HandleFunc("/api/v1/cities", HandleCities).Methods("GET")
+	router.HandleFunc("/api/v1/city", HandleCity).Methods("GET")
+	router.HandleFunc("/api/v1/city/create", HandleCreateCity).Methods("POST")
+	router.HandleFunc("/api/v1/city/update", HandleUpdateCity).Methods("PUT")
+	router.HandleFunc("/api/v1/city/delete", HandleDeleteCity).Methods("DELETE")
 
 	return ListenAndServe(":8080", router)
 }

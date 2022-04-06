@@ -92,7 +92,7 @@ func HandleUpdateContinent(w http.ResponseWriter, r *http.Request) {
 	mhttp.WriteBodyJSON(w, result)
 }
 
-func HandleDeleteHub(w http.ResponseWriter, r *http.Request) {
+func HandleDeleteContinent(w http.ResponseWriter, r *http.Request) {
 	var query_uuid = mhttp.Query(r, "uuid")
 
 	if _, err := muuid.UUIDFromString(query_uuid); err != nil {
@@ -100,7 +100,7 @@ func HandleDeleteHub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := DB.SoftDeleteHub(nil, query_uuid); err != nil {
+	if err := DB.SoftDeleteContinent(nil, query_uuid); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
