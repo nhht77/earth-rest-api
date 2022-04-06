@@ -110,3 +110,13 @@ func (obj *Country) DatabaseFields() string {
 		"created", "updated", "deleted_state",
 	)
 }
+
+type CountryList []*Country
+
+func (list CountryList) GetContinentIndexes() msql.DatabaseIndexList {
+	index_list := msql.DatabaseIndexList{}
+	for _, iter := range list {
+		index_list = append(index_list, iter.ContinentIndex)
+	}
+	return index_list
+}

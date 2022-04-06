@@ -46,19 +46,19 @@ func HandleCountry(w http.ResponseWriter, r *http.Request) {
 
 func HandleCreateCountry(w http.ResponseWriter, r *http.Request) {
 
-	continent := &pkg_v1.Country{}
+	country := &pkg_v1.Country{}
 
-	if err := mhttp.ReadBodyJSON(r, &continent); err != nil {
+	if err := mhttp.ReadBodyJSON(r, &country); err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
 	}
 
-	if err := continent.ValidateCreate(); err != nil {
+	if err := country.ValidateCreate(); err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
 	}
 
-	result, err := DB.CreateCountry(nil, continent)
+	result, err := DB.CreateCountry(nil, country)
 	if err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return

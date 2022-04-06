@@ -47,12 +47,12 @@ func CountryOptionsFromQuery(r *http.Request) (CountryQueryOptions, error) {
 	return options, nil
 }
 
-func (db *Database) CountriesByOptions(options CountryQueryOptions) ([]*pkg_v1.Country, error) {
+func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.CountryList, error) {
 	started := time.Now()
 
 	var (
 		err     error
-		results = []*pkg_v1.Country{}
+		results = pkg_v1.CountryList{}
 		fields  = new(pkg_v1.Country).DatabaseFields()
 	)
 
@@ -70,14 +70,14 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) ([]*pkg_v1.C
 
 	query := fmt.Sprintf(
 		// @todo join continent for city continent type
-		`SELECT %s FROM country`,
+		`SELECT %s FROM country `,
 		fields,
 	)
 
 	if !options.Deleted {
-		query += fmt.Sprintf(`AND deleted_state != %d`, msql.SoftDeleted)
+		query += fmt.Sprintf(`WHERE deleted_state != %d`, msql.SoftDeleted)
 	} else {
-		query += fmt.Sprintf(`AND deleted_state = %d`, msql.SoftDeleted)
+		query += fmt.Sprintf(`WHERE deleted_state = %d`, msql.SoftDeleted)
 	}
 
 	rows, err := db.postgres.Query(query)
@@ -111,13 +111,13 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) ([]*pkg_v1.C
 
 			results = append(results, curr)
 		} else {
-			Log.Warnf("DB.CountriesByOptions Scan error - %s", err.Error())
+			CheckOperation("CountriesByOptions Scan error", err, started)
 			rows.Close()
 			break
 		}
 	}
 	if err = rows.Err(); err != nil {
-		Log.Warnf("DB.CountriesByOptions error - %s", err.Error())
+		CheckOperation("CountrysByOptions", err, started)
 		rows.Close()
 		return results, err
 	}
@@ -129,7 +129,14 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) ([]*pkg_v1.C
 	if options.WithContinent {
 		// @todo import continent belong to country
 	} else {
-		// @todo import continent uuid of country
+		indexes_map, err := DB.ContinentUuidsByIndexes(results.GetContinentIndexes())
+		CheckOperation("CountrysByOptions - ContinentUuidsByIndexes error ", err, started)
+		if err != nil {
+			return results, err
+		}
+		for _, iter := range results {
+			iter.ContinentUuid = indexes_map[iter.ContinentIndex]
+		}
 	}
 
 	return results, nil
@@ -176,6 +183,15 @@ func (db *Database) CountryByUuid(tx *sql.Tx, uuid string) (*pkg_v1.Country, err
 		return nil, err
 	}
 
+	// Get continent uuid
+	{
+		continent_uuid, err := DB.ContinentUuidByIndex(tx, result.ContinentIndex)
+		if err != nil {
+			return nil, err
+		}
+		result.ContinentUuid = continent_uuid
+	}
+
 	return result, nil
 }
 
@@ -185,11 +201,9 @@ func (db *Database) IsCountryExist(tx *sql.Tx, country *pkg_v1.Country) (exist b
 		`SELECT uuid FROM country
 		WHERE details->>'phone_code' = '%s'
 		OR details->>'iso_code' = '%s'
-		OR details->>'currency' = '%s'
 		AND deleted_state != %d `,
 		country.Details.PhoneCode,
 		country.Details.ISOCode,
-		country.Details.Currency,
 		msql.SoftDeleted,
 	)
 	if muuid.UUIDValid(country.Uuid) {
@@ -231,8 +245,13 @@ func (db *Database) CreateCountry(tx *sql.Tx, country *pkg_v1.Country) (*pkg_v1.
 		}
 	)
 
-	// @todo get continent index by uuid
-	continent_index := 0
+	continent_index, err := DB.ContinentIndexByUuid(tx, country.ContinentUuid)
+	CheckOperation("CreateCountry Continent Uuud", err, started)
+	if err != nil {
+		return nil, err
+	}
+
+	Log.Info("CreateCountry", country, " continent index ", continent_index)
 
 	_, err = db.Exec(tx,
 		fmt.Sprintf(
