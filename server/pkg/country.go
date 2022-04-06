@@ -31,6 +31,8 @@ type CountryDetails struct {
 	PhoneCode string `json:"phone_code"`
 	ISOCode   string `json:"iso_code"`
 	Currency  string `json:"currency"`
+
+	Continent *Continent `json:"continent,omitempty"`
 }
 
 func (v *CountryDetails) Value() (driver.Value, error) {

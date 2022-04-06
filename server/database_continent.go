@@ -28,6 +28,15 @@ func (types ContinentTypeList) String() (str string) {
 	return str
 }
 
+func (types ContinentTypeList) Contains(value pkg_v1.ContinentType) bool {
+	for _, iter := range types {
+		if value == iter {
+			return true
+		}
+	}
+	return false
+}
+
 type ContinentQueryOptions struct {
 	WithCities    bool
 	WithCountries bool

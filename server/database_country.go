@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/nhht77/earth-rest-api/mhttp"
@@ -27,8 +28,8 @@ type CountryQueryOptions struct {
 
 func CountryOptionsFromQuery(r *http.Request) (CountryQueryOptions, error) {
 	options := CountryQueryOptions{
-		WithCities:    mhttp.QueryBoolDefault(r, "cities", false),
-		WithContinent: mhttp.QueryBoolDefault(r, "continent", false),
+		WithCities:    mhttp.QueryBoolDefault(r, "with_cities", false),
+		WithContinent: mhttp.QueryBoolDefault(r, "with_continent", false),
 		Deleted:       mhttp.QueryBoolDefault(r, "deleted", false),
 
 		CountryUuids: mhttp.QueryList(r, "countries", ","),
@@ -48,10 +49,10 @@ func CountryOptionsFromQuery(r *http.Request) (CountryQueryOptions, error) {
 }
 
 func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.CountryList, error) {
-	started := time.Now()
 
 	var (
 		err     error
+		started = time.Now()
 		results = pkg_v1.CountryList{}
 		fields  = new(pkg_v1.Country).DatabaseFields()
 	)
@@ -69,15 +70,18 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.Coun
 	}
 
 	query := fmt.Sprintf(
-		// @todo join continent for city continent type
 		`SELECT %s FROM country `,
 		fields,
 	)
 
 	if !options.Deleted {
-		query += fmt.Sprintf(`WHERE deleted_state != %d`, msql.SoftDeleted)
+		query += fmt.Sprintf(`WHERE deleted_state != %d `, msql.SoftDeleted)
 	} else {
-		query += fmt.Sprintf(`WHERE deleted_state = %d`, msql.SoftDeleted)
+		query += fmt.Sprintf(`WHERE deleted_state = %d `, msql.SoftDeleted)
+	}
+
+	if len(options.CountryUuids) > 0 {
+		query += fmt.Sprintf("AND uuid IN (%s) ", strings.Join(options.CountryUuids, ","))
 	}
 
 	rows, err := db.postgres.Query(query)
@@ -122,24 +126,51 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.Coun
 		return results, err
 	}
 
-	if options.WithCities {
-		// @todo import cities belong to country
-	}
-
-	if options.WithContinent {
-		// @todo import continent belong to country
-	} else {
-		indexes_map, err := DB.ContinentUuidsByIndexes(results.GetContinentIndexes())
-		CheckOperation("CountrysByOptions - ContinentUuidsByIndexes error ", err, started)
-		if err != nil {
-			return results, err
-		}
-		for _, iter := range results {
-			iter.ContinentUuid = indexes_map[iter.ContinentIndex]
-		}
+	if err := ToCountries(started, results, options); err != nil {
+		CheckOperation("CountrysByOptions - ToCountries error", err, started)
+		return results, err
 	}
 
 	return results, nil
+}
+
+func ToCountries(started time.Time, countries pkg_v1.CountryList, options CountryQueryOptions) error {
+
+	continents, err := DB.ContinentsByOptions(ContinentQueryOptions{Types: options.ContinentTypes})
+	CheckOperation("CountrysByOptions - ContinentsByOptions error ", err, started)
+	if err != nil {
+		return err
+	}
+
+	var (
+		continent_map    = map[msql.DatabaseIndex]*pkg_v1.Continent{}
+		filter_countries = pkg_v1.CountryList{}
+	)
+
+	// create continents map
+	for _, iter := range continents {
+		continent_map[iter.Index] = iter
+	}
+
+	// build countries base on continent options
+	for _, iter := range countries {
+		iter_continent := continent_map[iter.ContinentIndex]
+
+		// skip country
+		if !options.ContinentTypes.Contains(iter_continent.Type) {
+			continue
+		}
+
+		// get continent snapshot if requested
+		if options.WithContinent {
+			iter.Details.Continent = iter_continent
+		}
+		iter.ContinentUuid = iter_continent.Uuid
+
+		filter_countries = append(filter_countries, iter)
+	}
+
+	return nil
 }
 
 func (db *Database) CountryByUuid(tx *sql.Tx, uuid string) (*pkg_v1.Country, error) {
