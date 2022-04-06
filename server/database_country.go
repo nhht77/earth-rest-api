@@ -128,7 +128,6 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.Coun
 
 	filters, err := ToCountries(started, results, options)
 	if err != nil {
-		CheckOperation("CountrysByOptions - ToCountries error", err, started)
 		return results, err
 	}
 
@@ -138,7 +137,7 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.Coun
 func ToCountries(started time.Time, countries pkg_v1.CountryList, options CountryQueryOptions) (pkg_v1.CountryList, error) {
 
 	continents, err := DB.ContinentsByOptions(ContinentQueryOptions{Types: options.ContinentTypes})
-	CheckOperation("CountrysByOptions - ToCountries ", err, started)
+	CheckOperation("ToCountries ", err, started)
 	if err != nil {
 		return pkg_v1.CountryList{}, err
 	}
@@ -374,4 +373,60 @@ func (db *Database) SoftDeleteCountry(tx *sql.Tx, uuid string) error {
 	}
 
 	return nil
+}
+
+func (db *Database) CountryUuidByIndex(tx *sql.Tx, index msql.DatabaseIndex) (muuid.UUID, error) {
+	var (
+		uuid    = muuid.UUID{}
+		started = time.Now()
+	)
+
+	if index == 0 {
+		return uuid, errors.New("Invalid country index")
+	}
+
+	err := db.QueryRow(tx,
+		fmt.Sprintf(
+			`SELECT
+				uuid
+			FROM country
+			WHERE index IN (%d)
+			AND deleted_state != 1`,
+			index,
+		)).Scan(&uuid)
+
+	CheckOperation("CountryUuidByIndex", err, started)
+	if err != nil {
+		return uuid, err
+	}
+
+	return uuid, nil
+}
+
+func (db *Database) CountryIndexByUuid(tx *sql.Tx, uuid muuid.UUID) (msql.DatabaseIndex, error) {
+	var (
+		index   msql.DatabaseIndex
+		started = time.Now()
+	)
+
+	if !muuid.UUIDValid(uuid) {
+		return index, errors.New("Invalid country uuid")
+	}
+
+	err := db.QueryRow(tx,
+		fmt.Sprintf(
+			`SELECT
+				index
+			FROM country
+			WHERE uuid IN ('%s')
+			AND deleted_state != 1`,
+			uuid.String(),
+		)).Scan(&index)
+
+	CheckOperation("CountryIndexByUuid", err, started)
+	if err != nil {
+		return index, err
+	}
+
+	return index, nil
 }

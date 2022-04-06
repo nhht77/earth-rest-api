@@ -85,9 +85,8 @@ func (obj *City) ValidateUpdate() error {
 func (obj *City) DatabaseFields() string {
 	return msql.FormatFields(
 		"index", "continent_index",
-		"uuid", "name",
-		"phone_code", "iso_code",
-		"currency", "creator",
+		"country_index", "uuid",
+		"name", "details", "creator",
 		"created", "updated", "deleted_state",
 	)
 }

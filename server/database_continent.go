@@ -230,7 +230,7 @@ func (db *Database) ContinentUuidsByIndexes(indexes msql.DatabaseIndexList) (map
 	)
 
 	if len(indexes) == 0 {
-		return indexes_map, errors.New("Invalid index")
+		return indexes_map, errors.New("Invalid continent index")
 	}
 
 	rows, err := db.postgres.Query(

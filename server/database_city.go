@@ -159,6 +159,7 @@ func (db *Database) CityByUuid(tx *sql.Tx, uuid string) (*pkg_v1.City, error) {
 		)).Scan(
 		&result.Index,
 		&result.ContinentIndex,
+		&result.CountryIndex,
 		&result.Uuid,
 		&result.Name,
 		&result.Details,
@@ -177,6 +178,19 @@ func (db *Database) CityByUuid(tx *sql.Tx, uuid string) (*pkg_v1.City, error) {
 		return nil, err
 	}
 
+	continent_uuid, err := DB.ContinentUuidByIndex(tx, result.ContinentIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	country_uuid, err := DB.CountryUuidByIndex(tx, result.CountryIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	result.ContinentUuid = continent_uuid
+	result.CountryUuid = country_uuid
+
 	return result, nil
 }
 
@@ -184,7 +198,7 @@ func (db *Database) IsCapitalExist(tx *sql.Tx, city *pkg_v1.City) (exist bool, e
 
 	var query = fmt.Sprintf(
 		`SELECT uuid FROM city
-		WHERE details->>'is_capital' = %t
+		WHERE (details->>'is_capital')::boolean = %t
 		AND country_index = %d
 		AND deleted_state != %d `,
 		city.Details.IsCapital,
@@ -231,9 +245,14 @@ func (db *Database) CreateCity(tx *sql.Tx, city *pkg_v1.City) (*pkg_v1.City, err
 		}
 	)
 
-	// @todo get continent & country index by uuid
-	continent_index := 0
-	country_index := 0
+	continent_index, err := DB.ContinentIndexByUuid(tx, city.ContinentUuid)
+	if err != nil {
+		return nil, err
+	}
+	country_index, err := DB.CountryIndexByUuid(tx, city.CountryUuid)
+	if err != nil {
+		return nil, err
+	}
 
 	_, err = db.Exec(tx,
 		fmt.Sprintf(

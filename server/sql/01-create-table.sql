@@ -31,5 +31,6 @@ CREATE TABLE IF NOT EXISTS city (
     details jsonb,
     created timestamp DEFAULT NOW(),
     updated timestamp,
+    creator jsonb,
     deleted_state smallint default 0
 );
