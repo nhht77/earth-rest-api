@@ -31,6 +31,9 @@ type City struct {
 
 type CityDetails struct {
 	IsCapital bool `json:"is_capital"`
+
+	Continent *Continent `json:"continent,omitempty"`
+	Country   *Country   `json:"country,omitempty"`
 }
 
 func (v *CityDetails) Value() (driver.Value, error) {
@@ -90,3 +93,5 @@ func (obj *City) DatabaseFields() string {
 		"created", "updated", "deleted_state",
 	)
 }
+
+type CityList []*City

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/nhht77/earth-rest-api/mhttp"
@@ -81,7 +80,7 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.Coun
 	}
 
 	if len(options.CountryUuids) > 0 {
-		query += fmt.Sprintf("AND uuid IN (%s) ", strings.Join(options.CountryUuids, ","))
+		query += fmt.Sprintf("AND uuid IN (%s) ", mstring.FormatStringValues(options.CountryUuids...))
 	}
 
 	rows, err := db.postgres.Query(query)
@@ -135,6 +134,10 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.Coun
 }
 
 func ToCountries(started time.Time, countries pkg_v1.CountryList, options CountryQueryOptions) (pkg_v1.CountryList, error) {
+
+	if started.IsZero() {
+		started = time.Now()
+	}
 
 	continents, err := DB.ContinentsByOptions(ContinentQueryOptions{Types: options.ContinentTypes})
 	CheckOperation("ToCountries ", err, started)

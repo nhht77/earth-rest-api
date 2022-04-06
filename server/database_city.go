@@ -28,8 +28,8 @@ type CityQueryOptions struct {
 
 func CityOptionsFromQuery(r *http.Request) (CityQueryOptions, error) {
 	options := CityQueryOptions{
-		WithCountry:   mhttp.QueryBoolDefault(r, "country", false),
-		WithContinent: mhttp.QueryBoolDefault(r, "continent", false),
+		WithCountry:   mhttp.QueryBoolDefault(r, "with_country", false),
+		WithContinent: mhttp.QueryBoolDefault(r, "with_continent", false),
 		Deleted:       mhttp.QueryBoolDefault(r, "deleted", false),
 
 		CountryUuids: mhttp.QueryList(r, "countries", ","),
@@ -50,12 +50,11 @@ func CityOptionsFromQuery(r *http.Request) (CityQueryOptions, error) {
 }
 
 func (db *Database) CitiesByOptions(options CityQueryOptions) ([]*pkg_v1.City, error) {
-	started := time.Now()
 
 	var (
 		err     error
+		started = time.Now()
 		results = []*pkg_v1.City{}
-		fields  = new(pkg_v1.City).DatabaseFields()
 	)
 
 	if len(options.ContinentTypes) == 0 {
@@ -70,17 +69,16 @@ func (db *Database) CitiesByOptions(options CityQueryOptions) ([]*pkg_v1.City, e
 		)
 	}
 
-	query := fmt.Sprintf(
-		// @todo join continent for city continent type
-		// @todo join country for city country
-		`SELECT %s FROM city`,
-		fields,
-	)
+	query := fmt.Sprintf(`SELECT %s FROM city `, new(pkg_v1.City).DatabaseFields())
 
 	if !options.Deleted {
-		query += fmt.Sprintf(`AND deleted_state != %d`, msql.SoftDeleted)
+		query += fmt.Sprintf(`WHERE deleted_state != %d`, msql.SoftDeleted)
 	} else {
-		query += fmt.Sprintf(`AND deleted_state = %d`, msql.SoftDeleted)
+		query += fmt.Sprintf(`WHERE deleted_state = %d`, msql.SoftDeleted)
+	}
+
+	if len(options.CityUuids) > 0 {
+		query += fmt.Sprintf(`AND uuid IN (%s) `, mstring.FormatStringValues(options.CityUuids...))
 	}
 
 	rows, err := db.postgres.Query(query)
@@ -99,6 +97,7 @@ func (db *Database) CitiesByOptions(options CityQueryOptions) ([]*pkg_v1.City, e
 		if err = rows.Scan(
 			&curr.Index,
 			&curr.ContinentIndex,
+			&curr.CountryIndex,
 			&curr.Uuid,
 			&curr.Name,
 			&curr.Details,
@@ -125,15 +124,83 @@ func (db *Database) CitiesByOptions(options CityQueryOptions) ([]*pkg_v1.City, e
 		return results, err
 	}
 
-	if options.WithCountry {
-		// @todo import country belong to country
+	filter_results, err := DB.ToCities(started, results, options)
+	if err != nil {
+		return results, err
 	}
 
-	if options.WithContinent {
-		// @todo import continent belong to country
+	return filter_results, nil
+}
+
+func (db *Database) ToCities(started time.Time, cities pkg_v1.CityList, options CityQueryOptions) (pkg_v1.CityList, error) {
+	if started.IsZero() {
+		started = time.Now()
 	}
 
-	return results, nil
+	continents, err := DB.ContinentsByOptions(ContinentQueryOptions{
+		Types: options.ContinentTypes,
+	})
+	CheckOperation("ToCities ", err, started)
+	if err != nil {
+		return pkg_v1.CityList{}, err
+	}
+
+	countries, err := DB.CountriesByOptions(CountryQueryOptions{
+		CountryUuids: options.CountryUuids,
+	})
+	CheckOperation("ToCities ", err, started)
+	if err != nil {
+		return pkg_v1.CityList{}, err
+	}
+
+	var (
+		continent_map = map[msql.DatabaseIndex]*pkg_v1.Continent{}
+		country_map   = map[msql.DatabaseIndex]*pkg_v1.Country{}
+		filter_cities = pkg_v1.CityList{}
+	)
+
+	// create continents map
+	for _, iter := range continents {
+		continent_map[iter.Index] = iter
+	}
+
+	// create country map
+	for _, iter := range countries {
+		country_map[iter.Index] = iter
+	}
+
+	for _, iter := range cities {
+
+		iter_country := country_map[iter.CountryIndex]
+		iter_continent := continent_map[iter.ContinentIndex]
+
+		if iter_continent == nil || iter_country == nil {
+			continue
+		}
+
+		if !options.ContinentTypes.Contains(iter_continent.Type) {
+			continue
+		}
+
+		is_country_not_match := len(options.CountryUuids) > 0 && !mstring.SliceContains(options.CountryUuids, iter_country.Uuid.String())
+		if is_country_not_match {
+			continue
+		}
+
+		if options.WithContinent {
+			iter.Details.Continent = iter_continent
+		}
+
+		if options.WithCountry {
+			iter.Details.Country = iter_country
+		}
+
+		iter.ContinentUuid = iter_continent.Uuid
+		iter.CountryUuid = iter_country.Uuid
+
+		filter_cities = append(filter_cities, iter)
+	}
+	return filter_cities, nil
 }
 
 func (db *Database) CityByUuid(tx *sql.Tx, uuid string) (*pkg_v1.City, error) {
@@ -194,15 +261,19 @@ func (db *Database) CityByUuid(tx *sql.Tx, uuid string) (*pkg_v1.City, error) {
 	return result, nil
 }
 
-func (db *Database) IsCapitalExist(tx *sql.Tx, city *pkg_v1.City) (exist bool, err error) {
+// Note: Country can have only one capital
+func (db *Database) IsCapitalExist(tx *sql.Tx, city *pkg_v1.City, country *pkg_v1.Country) (exist bool, err error) {
+
+	if city.Details != nil && !city.Details.IsCapital {
+		return false, nil
+	}
 
 	var query = fmt.Sprintf(
 		`SELECT uuid FROM city
-		WHERE (details->>'is_capital')::boolean = %t
+		WHERE (details->>'is_capital')::boolean = true
 		AND country_index = %d
 		AND deleted_state != %d `,
-		city.Details.IsCapital,
-		city.CountryIndex,
+		country.Index,
 		msql.SoftDeleted,
 	)
 	if muuid.UUIDValid(city.Uuid) {
@@ -220,7 +291,12 @@ func (db *Database) CreateCity(tx *sql.Tx, city *pkg_v1.City) (*pkg_v1.City, err
 		return nil, err
 	}
 
-	is_exist, err := DB.IsCapitalExist(tx, city)
+	country, err := DB.CountryByUuid(tx, city.CountryUuid.String())
+	if err != nil {
+		return nil, err
+	}
+
+	is_exist, err := DB.IsCapitalExist(tx, city, country)
 	if err != nil {
 		return nil, err
 	}
@@ -249,10 +325,6 @@ func (db *Database) CreateCity(tx *sql.Tx, city *pkg_v1.City) (*pkg_v1.City, err
 	if err != nil {
 		return nil, err
 	}
-	country_index, err := DB.CountryIndexByUuid(tx, city.CountryUuid)
-	if err != nil {
-		return nil, err
-	}
 
 	_, err = db.Exec(tx,
 		fmt.Sprintf(
@@ -263,7 +335,7 @@ func (db *Database) CreateCity(tx *sql.Tx, city *pkg_v1.City) (*pkg_v1.City, err
 			)`,
 			mstring.FormatFields(fields...),
 			continent_index,
-			country_index,
+			country.Index,
 			uuid.String(),
 			city.Name,
 			json_details,
@@ -287,7 +359,12 @@ func (db *Database) UpdateCity(tx *sql.Tx, city *pkg_v1.City) (*pkg_v1.City, err
 		return nil, err
 	}
 
-	is_exist, err := DB.IsCapitalExist(tx, city)
+	country, err := DB.CountryByUuid(tx, city.CountryUuid.String())
+	if err != nil {
+		return nil, err
+	}
+
+	is_exist, err := DB.IsCapitalExist(tx, city, country)
 	if err != nil {
 		return nil, err
 	}
