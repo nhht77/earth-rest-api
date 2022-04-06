@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	_ "github.com/lib/pq"
@@ -19,8 +20,16 @@ import (
 
 type DatabaseIndex uint
 
-type DB_OBJECT struct {
-	DB_INDEX DatabaseIndex `json:"-" yaml:"-"`
+type DatabaseIndexList []DatabaseIndex
+
+func (indexes DatabaseIndexList) String() (str string) {
+	for _, index := range indexes {
+		if len(str) > 0 {
+			str += ","
+		}
+		str += strconv.FormatUint(uint64(index), 10)
+	}
+	return str
 }
 
 type DeletedState int

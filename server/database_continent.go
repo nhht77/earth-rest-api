@@ -28,6 +28,15 @@ func (types ContinentTypeList) String() (str string) {
 	return str
 }
 
+func (types ContinentTypeList) Contains(value pkg_v1.ContinentType) bool {
+	for _, iter := range types {
+		if value == iter {
+			return true
+		}
+	}
+	return false
+}
+
 type ContinentQueryOptions struct {
 	WithCities    bool
 	WithCountries bool
@@ -186,6 +195,144 @@ func (db *Database) ContinentByUuid(tx *sql.Tx, uuid string) (*pkg_v1.Continent,
 	return result, nil
 }
 
+func (db *Database) ContinentUuidByIndex(tx *sql.Tx, index msql.DatabaseIndex) (muuid.UUID, error) {
+	var (
+		uuid    = muuid.UUID{}
+		started = time.Now()
+	)
+
+	if index == 0 {
+		return uuid, errors.New("Invalid index")
+	}
+
+	err := db.QueryRow(tx,
+		fmt.Sprintf(
+			`SELECT
+				uuid
+			FROM continent
+			WHERE index IN (%d)
+			AND deleted_state != 1`,
+			index,
+		)).Scan(&uuid)
+
+	CheckOperation("ContinentUuidByIndex", err, started)
+	if err != nil {
+		return uuid, err
+	}
+
+	return uuid, nil
+}
+
+func (db *Database) ContinentUuidsByIndexes(indexes msql.DatabaseIndexList) (map[msql.DatabaseIndex]muuid.UUID, error) {
+	var (
+		indexes_map = map[msql.DatabaseIndex]muuid.UUID{}
+		started     = time.Now()
+	)
+
+	if len(indexes) == 0 {
+		return indexes_map, errors.New("Invalid continent index")
+	}
+
+	rows, err := db.postgres.Query(
+		fmt.Sprintf(
+			`SELECT
+				index,
+				uuid
+			FROM continent
+			WHERE index IN (%s)
+			AND deleted_state != 1`,
+			indexes.String(),
+		))
+
+	CheckOperation("ContinentUuidsByIndexes", err, started)
+	if err != nil {
+		return indexes_map, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			curr_index msql.DatabaseIndex
+			curr_uuid  = muuid.UUID{}
+		)
+		if err = rows.Scan(
+			&curr_index,
+			&curr_uuid,
+		); err == nil {
+			indexes_map[curr_index] = curr_uuid
+		} else {
+			CheckOperation("ContinentUuidsByIndexes Scan error", err, started)
+			rows.Close()
+			break
+		}
+	}
+
+	return indexes_map, nil
+}
+
+func (db *Database) ContinentIndexByUuid(tx *sql.Tx, uuid muuid.UUID) (msql.DatabaseIndex, error) {
+	var (
+		index   msql.DatabaseIndex
+		started = time.Now()
+	)
+
+	if !muuid.UUIDValid(uuid) {
+		return index, errors.New("Invalid continent uuid")
+	}
+
+	err := db.QueryRow(tx,
+		fmt.Sprintf(
+			`SELECT
+				index
+			FROM continent
+			WHERE uuid IN ('%s')
+			AND deleted_state != 1`,
+			uuid.String(),
+		)).Scan(&index)
+
+	CheckOperation("ContinentIndexByUuid", err, started)
+	if err != nil {
+		return index, err
+	}
+
+	return index, nil
+}
+
+func (db *Database) ContinentUuidsByIndex(tx *sql.Tx, indexes msql.DatabaseIndexList) (*pkg_v1.Continent, error) {
+	if len(indexes) == 0 {
+		return nil, errors.New("Invalid index")
+	}
+
+	var (
+		result  = &pkg_v1.Continent{}
+		started = time.Now()
+	)
+
+	rows, err := db.postgres.Query(
+		fmt.Sprintf(
+			`SELECT
+				uuid,
+				index
+				FROM continent
+			WHERE index IN (%s)
+			AND deleted_state != 1`,
+			indexes.String(),
+		))
+
+	defer rows.Close()
+
+	for rows.Next() {
+
+	}
+
+	CheckOperation("ContinentByUuid", err, started)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (db *Database) IsContinentTypeExist(tx *sql.Tx, continent *pkg_v1.Continent) (exist bool, err error) {
 
 	var query = fmt.Sprintf(
@@ -299,7 +446,7 @@ func (db *Database) UpdateContinent(tx *sql.Tx, continent *pkg_v1.Continent) (*p
 }
 
 // delete continent
-func (db *Database) SoftDeleteHub(tx *sql.Tx, uuid string) error {
+func (db *Database) SoftDeleteContinent(tx *sql.Tx, uuid string) error {
 
 	if _, err := muuid.UUIDFromString(uuid); err != nil {
 		return err
@@ -314,7 +461,7 @@ func (db *Database) SoftDeleteHub(tx *sql.Tx, uuid string) error {
 		msql.SoftDeleted,
 		uuid,
 	))
-	CheckOperation("SoftDeleteHub", err, started)
+	CheckOperation("SoftDeleteContinent", err, started)
 	if err != nil {
 		return err
 	}
