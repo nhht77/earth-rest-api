@@ -126,20 +126,21 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.Coun
 		return results, err
 	}
 
-	if err := ToCountries(started, results, options); err != nil {
+	filters, err := ToCountries(started, results, options)
+	if err != nil {
 		CheckOperation("CountrysByOptions - ToCountries error", err, started)
 		return results, err
 	}
 
-	return results, nil
+	return filters, nil
 }
 
-func ToCountries(started time.Time, countries pkg_v1.CountryList, options CountryQueryOptions) error {
+func ToCountries(started time.Time, countries pkg_v1.CountryList, options CountryQueryOptions) (pkg_v1.CountryList, error) {
 
 	continents, err := DB.ContinentsByOptions(ContinentQueryOptions{Types: options.ContinentTypes})
-	CheckOperation("CountrysByOptions - ContinentsByOptions error ", err, started)
+	CheckOperation("CountrysByOptions - ToCountries ", err, started)
 	if err != nil {
-		return err
+		return pkg_v1.CountryList{}, err
 	}
 
 	var (
@@ -156,6 +157,10 @@ func ToCountries(started time.Time, countries pkg_v1.CountryList, options Countr
 	for _, iter := range countries {
 		iter_continent := continent_map[iter.ContinentIndex]
 
+		if iter_continent == nil {
+			continue
+		}
+
 		// skip country
 		if !options.ContinentTypes.Contains(iter_continent.Type) {
 			continue
@@ -170,7 +175,7 @@ func ToCountries(started time.Time, countries pkg_v1.CountryList, options Countr
 		filter_countries = append(filter_countries, iter)
 	}
 
-	return nil
+	return filter_countries, nil
 }
 
 func (db *Database) CountryByUuid(tx *sql.Tx, uuid string) (*pkg_v1.Country, error) {
@@ -230,9 +235,10 @@ func (db *Database) IsCountryExist(tx *sql.Tx, country *pkg_v1.Country) (exist b
 
 	var query = fmt.Sprintf(
 		`SELECT uuid FROM country
-		WHERE details->>'phone_code' = '%s'
-		OR details->>'iso_code' = '%s'
-		AND deleted_state != %d `,
+		WHERE (
+			details->>'phone_code' = '%s'
+			OR details->>'iso_code' = '%s'
+		) AND deleted_state != %d `,
 		country.Details.PhoneCode,
 		country.Details.ISOCode,
 		msql.SoftDeleted,
@@ -281,8 +287,6 @@ func (db *Database) CreateCountry(tx *sql.Tx, country *pkg_v1.Country) (*pkg_v1.
 	if err != nil {
 		return nil, err
 	}
-
-	Log.Info("CreateCountry", country, " continent index ", continent_index)
 
 	_, err = db.Exec(tx,
 		fmt.Sprintf(
