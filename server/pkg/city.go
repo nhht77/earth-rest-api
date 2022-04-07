@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/nhht77/earth-rest-api/msql"
-	muuid "github.com/nhht77/earth-rest-api/muuid"
+	"github.com/nhht77/earth-rest-api/server/pkg/msql"
+	muuid "github.com/nhht77/earth-rest-api/server/pkg/muuid"
 )
 
 type City struct {
