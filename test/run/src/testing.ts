@@ -3,7 +3,7 @@ import { api, APIResponse } from './api';
 import moment = require('moment');
 
 import { format as pretty_format } from 'pretty-format';
-import { City, Continent, Country, UserMinimal } from '../types/earth';
+import { City, Continent, Country, UserMinimal } from '../types/types';
 
 export const pretty_print = (val: unknown) => {
   console.log(pretty_format(val));
