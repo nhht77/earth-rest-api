@@ -69,7 +69,7 @@
             "cd ${workspaceFolder}/server &&",
             "go build -v ./ &&",
             "if [ -f $GOPATH/.env ] ; then source $GOPATH/.env ; fi &&",
-            "./server -test-build=true --bool_val=true",
+            "./server -test-build=true",
           ]
         },
         "osx": {
@@ -78,14 +78,14 @@
             "cd server &&",
             "go build -v ./ &&",
             "if [ -f $GOPATH/.env ] ; then source $GOPATH/.env ; fi &&",
-            "./server -test-build=true --bool_val=true",
+            "./server -test-build=true",
           ]
         },
         "windows": {
           "command": [
             "cd ${workspaceFolder}/server &&",
             "go build -v ./ &&",
-            "server.exe -test-build=true --bool_val=true",
+            "server.exe -test-build=true",
           ]
         }
       },

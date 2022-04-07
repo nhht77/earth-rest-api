@@ -1,6 +1,6 @@
 import { api } from "./src/api";
 import { earth_testing } from "./src/testing";
-import { City, CityDetails, Continent, Country, CountryDetails } from "./types/earth";
+import { City, CityDetails, Continent, Country, CountryDetails } from "./types/types";
 
 describe('ping', () => {
   test("earth rest api ping", async () => {
