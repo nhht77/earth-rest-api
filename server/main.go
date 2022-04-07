@@ -1,8 +1,10 @@
 package main
 
 import (
+	"flag"
 	"os"
 
+	"github.com/nhht77/earth-rest-api/server/pkg/mstring"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,6 +20,9 @@ func init_resource() {
 	// init logger
 	init_logger()
 
+	// init framework
+	init_framework(AppConfig)
+
 	AppConfig.ReadDefault()
 
 	if err := DB.Initialize(AppConfig); err != nil {
@@ -30,6 +35,12 @@ func init_resource() {
 func main() {
 	init_resource()
 
+	// Note: clean table after each resource release
+	// @todo Temp solution until wrap application in docker container
+	if AppConfig.Framework.IsTestBuild {
+		DB._ClearTable()
+	}
+
 	if err := RunHTTP(); err != nil {
 		release_resource()
 		Log.Fatalf("[mhttp] RunHTTP error %s", err.Error())
@@ -41,10 +52,21 @@ func release_resource() {
 	DB.Close()
 }
 
-////// Logger
 func init_logger() {
 	Log.Out = os.Stdout
 	Log.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp: true,
 	})
+}
+
+func init_framework(AppConfig *Config) {
+
+	AppConfig.Framework = &FrameworkConfig{}
+
+	flag.BoolVar(&AppConfig.Framework.IsTestBuild, "-test-build", false, "run test environment and using test database")
+	flag.StringVar(&AppConfig.Framework.ServerPort, "-port", "8080", "server serves and listens at port")
+	flag.StringVar(&AppConfig.Framework.DatabasePort, "-database-port", "5432", "Database port")
+	flag.StringVar(&AppConfig.Framework.DatabaseHost, "-database-host", "localhost", "Database host")
+
+	Log.Info("Framework Config: ", mstring.ToJSON(AppConfig.Framework))
 }
