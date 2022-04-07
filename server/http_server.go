@@ -31,6 +31,10 @@ func RunHTTP() error {
 	router.HandleFunc("/api/v1/city/update", HandleUpdateCity).Methods("PUT")
 	router.HandleFunc("/api/v1/city/delete", HandleDeleteCity).Methods("DELETE")
 
+	if AppConfig.Framework.IsTestBuild {
+		router.HandleFunc("/api/v1/__clear-test-table", HandleClearTestTable).Methods("DELETE")
+	}
+
 	return ListenAndServe(":8080", router)
 }
 
@@ -47,5 +51,14 @@ func MonitorHandle(h http.Handler) http.Handler {
 }
 
 func Ping(w http.ResponseWriter, r *http.Request) {
+	mhttp.WriteBodyJSON(w, "")
+}
+
+func HandleClearTestTable(w http.ResponseWriter, r *http.Request) {
+
+	if err := DB._ClearTable(); err != nil {
+		mhttp.WriteInternalServerError(w, err.Error())
+	}
+
 	mhttp.WriteBodyJSON(w, "")
 }

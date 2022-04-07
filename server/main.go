@@ -35,6 +35,12 @@ func init_resource() {
 func main() {
 	init_resource()
 
+	// Note: clean table after each resource release
+	// @todo Temp solution until wrap application in docker container
+	if AppConfig.Framework.IsTestBuild {
+		DB._ClearTable()
+	}
+
 	if err := RunHTTP(); err != nil {
 		release_resource()
 		Log.Fatalf("[mhttp] RunHTTP error %s", err.Error())

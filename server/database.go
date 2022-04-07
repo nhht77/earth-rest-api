@@ -165,3 +165,46 @@ func CheckOperation(op string, err error, started time.Time) bool {
 	Log.Infof("[postgre] DB.%s %s", op, spent)
 	return hasError == false
 }
+
+func (db *Database) _ClearTable() error {
+
+	tables := map[string]string{
+		"continent": "continent_index_seq",
+		"country":   "country_index_seq",
+		"city":      "city_index_seq",
+	}
+
+	clear_table_by_map := func(tx *sql.Tx, tables map[string]string) error {
+		for table, sequence := range tables {
+			_, err := DB.Exec(tx, fmt.Sprintf("TRUNCATE %s CASCADE", table))
+			if err != nil {
+				return err
+			}
+			_, err = DB.Exec(tx, fmt.Sprintf("ALTER SEQUENCE %s RESTART WITH 1", sequence))
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	tx, err := DB.Begin()
+	if err != nil {
+		Log.Fatal("[testing] clearTable DB.Begin error", err)
+		return err
+	}
+
+	if err := clear_table_by_map(tx, tables); err != nil {
+		DB.Rollback(tx)
+		Log.Fatal("[testing] clearTable clear_table_by_map error", err)
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		Log.Fatal("[testing] clearTable tx.Commit error", err)
+		return err
+	}
+
+	return nil
+}
