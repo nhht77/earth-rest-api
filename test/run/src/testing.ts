@@ -3,6 +3,7 @@ import { api, APIResponse } from './api';
 import moment = require('moment');
 
 import { format as pretty_format } from 'pretty-format';
+import { City, Continent, Country, UserMinimal } from '../types/earth';
 
 export const pretty_print = (val: unknown) => {
   console.log(pretty_format(val));
@@ -100,10 +101,35 @@ export class EarthAPITesting extends Testing {
     super();
   }
 
+  creator: UserMinimal = {
+    email: 'makkara.sinappi@gmail.com',
+    name: 'Makkara Sinappi',
+  }
+
   data = {
-    Continent: {}
-    Country: {}
-    City: {}
+    Continent: {
+      name: 'Europe',
+      type: 3,
+      area_by_km2: 366033131,
+      creator: this.creator,
+    } as Continent,
+    Country: {
+      name: 'Finland',
+      details: {
+        phone_code: '358',
+        iso_code: 'FI / FIN',
+        currency: '€',
+        continent: {},
+      },
+      creator: this.creator,
+    } as Country,
+    City: {
+      name: 'Helsinki',
+      details: {
+        is_capital: true,
+      },
+      creator: this.creator,
+    } as City,
   };
 
   initializeFromAPI(...t: ('continent' | 'country' | 'city')[]): Promise<any> {
@@ -115,11 +141,21 @@ export class EarthAPITesting extends Testing {
               this.data.Continent = results.find((iter) => (iter.uuid = this.data.Continent.uuid));
             });
           }
+          case 'country': {
+            return api.json<Country[]>('/api/v1/countries').then((results) => {
+              this.data.Continent = results.find((iter) => (iter.uuid = this.data.Continent.uuid));
+            });
+          }
+          case 'city': {
+            return api.json<Country[]>('/api/v1/cities').then((results) => {
+              this.data.Continent = results.find((iter) => (iter.uuid = this.data.Continent.uuid));
+            });
+          }
         }
       })
     );
   }
 }
 
-export const feedback_testing = new EarthAPITesting();
+export const earth_testing = new EarthAPITesting();
 

@@ -31,7 +31,7 @@ class API {
     return fetch(url, options);
   }
 
-  url(path?: string, query?: any): string {
+  url(path: string, query?: any): string {
     let url = 'http://' + root_domain + ':8080';
     if (path && path[0] !== '/') {
       path = '/' + path;
@@ -43,23 +43,41 @@ class API {
     return url;
   }
 
-  get(path?: string, query?: any): Promise<Response> {
+  get(path: string, query?: any): Promise<Response> {
     return this.fetch(this.url(path, query));
   }
 
-  json<T = APIResponse>(path?: string, query?: any): Promise<T> {
+  json<T = APIResponse>(path: string, query?: any): Promise<T> {
     return this.get(path, query).then(jsonResponse);
   }
 
-  post<T = APIResponse>(path?: string, body?: any): Promise<T> {
+  post<T = APIResponse>(path: string, body?: any): Promise<T> {
     return this.postQuery(path, undefined, body);
   }
 
-  postQuery<T = APIResponse>(path?: string, query?: any, body?: any): Promise<T> {
+  postQuery<T = APIResponse>(path: string, query?: any, body?: any): Promise<T> {
     return this.fetch(this.url(path, query), {
       method: 'POST',
       body: body ? JSON.stringify(body) : undefined,
       headers: body ? headersPostJSON : undefined,
+    }).then(jsonResponse);
+  }
+
+  update<T = APIResponse>(path: string, body?: any): Promise<T> {
+    return this.updateQuery(path, undefined, body);
+  }
+
+  updateQuery<T = APIResponse>(path: string, query?: any, body?: any): Promise<T> {
+    return this.fetch(this.url(path, query), {
+      method: 'PUT',
+      body: body ? JSON.stringify(body) : undefined,
+      headers: body ? headersPostJSON : undefined,
+    }).then(jsonResponse);
+  }
+
+  delete(path: string, query?: any): Promise<Response> {
+    return this.fetch(this.url(path, query), {
+      method: 'DELETE',
     }).then(jsonResponse);
   }
 }
