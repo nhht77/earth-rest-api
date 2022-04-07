@@ -1,3 +1,5 @@
+test/node_modules
+test/test-report.html
 server/server
 env
 env_test

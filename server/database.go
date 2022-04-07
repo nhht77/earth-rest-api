@@ -12,11 +12,6 @@ import (
 	"github.com/nhht77/earth-rest-api/server/pkg/mstring"
 )
 
-var (
-	host = "db"
-	port = "5432"
-)
-
 type Database struct {
 	postgres *sql.DB
 }
@@ -27,9 +22,20 @@ func (db *Database) Initialize(c *Config) error {
 		return err
 	}
 
-	Log.Infof("[postgre] Database Source: %s", c.DatabaseSourcePrintable(host, port))
+	Log.Infof(
+		"[postgre] Database Source: %s",
+		c.DatabaseSourcePrintable(
+			AppConfig.Framework.DatabaseHost,
+			AppConfig.Framework.DatabasePort,
+		),
+	)
 
-	result, err := sql.Open("postgres", c.DatabaseSource(host, port))
+	result, err := sql.Open(
+		"postgres",
+		c.DatabaseSource(
+			AppConfig.Framework.DatabaseHost,
+			AppConfig.Framework.DatabasePort,
+		))
 	if err != nil {
 		return err
 	}

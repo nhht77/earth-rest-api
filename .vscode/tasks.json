@@ -4,7 +4,7 @@
     "version": "2.0.0",
     "tasks": [
       {
-        "label": "run server",
+        "label": "run server --test-build",
         "type": "shell",
         "group": {
           "kind": "build",
@@ -47,7 +47,7 @@
         }
       },
       {
-        "label": "run test",
+        "label": "run test-server",
         "type": "shell",
         "group": {
           "kind": "build",
@@ -69,7 +69,7 @@
             "cd ${workspaceFolder}/server &&",
             "go build -v ./ &&",
             "if [ -f $GOPATH/.env ] ; then source $GOPATH/.env ; fi &&",
-            "go test -v",
+            "./server -test-build=true --bool_val=true",
           ]
         },
         "osx": {
@@ -77,16 +77,24 @@
             "cd ${workspaceFolder}; source env &&",
             "cd server &&",
             "go build -v ./ &&",
-            "go test -v",
+            "if [ -f $GOPATH/.env ] ; then source $GOPATH/.env ; fi &&",
+            "./server -test-build=true --bool_val=true",
           ]
         },
         "windows": {
           "command": [
             "cd ${workspaceFolder}/server &&",
             "go build -v ./ &&",
-            "go test -v",
+            "server.exe -test-build=true --bool_val=true",
           ]
         }
+      },
+      {
+        "label": "run test",
+        "type": "npm",
+        "script": "test",
+        "path": "test/",
+        "problemMatcher": []
       }
     ]
   }
