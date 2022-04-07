@@ -12,7 +12,7 @@ import (
 
 	_ "github.com/lib/pq"
 
-	mstring "github.com/nhht77/earth-rest-api/mstring"
+	mstring "github.com/nhht77/earth-rest-api/server/pkg/mstring"
 )
 
 ////////////////////////////

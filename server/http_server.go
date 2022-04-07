@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/nhht77/earth-rest-api/mhttp"
+	"github.com/nhht77/earth-rest-api/server/pkg/mhttp"
 )
 
 func RunHTTP() error {

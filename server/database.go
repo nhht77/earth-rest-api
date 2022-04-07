@@ -8,12 +8,12 @@ import (
 
 	_ "github.com/lib/pq"
 
-	msql "github.com/nhht77/earth-rest-api/msql"
-	mstring "github.com/nhht77/earth-rest-api/mstring"
+	"github.com/nhht77/earth-rest-api/server/pkg/msql"
+	"github.com/nhht77/earth-rest-api/server/pkg/mstring"
 )
 
 var (
-	host = "127.0.0.1"
+	host = "db"
 	port = "5432"
 )
 
