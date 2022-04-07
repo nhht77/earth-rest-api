@@ -30,7 +30,7 @@ type FrameworkConfig struct {
 func (c *Config) ReadDefault() {
 
 	// @bugfix source test db if test build flag is true
-	if AppConfig.Framework.IsTestBuild || true {
+	if AppConfig.Framework.IsTestBuild || false {
 		AppConfig.Framework.IsTestBuild = true
 		Log.Infof("[postgre] Reading from test database %t", AppConfig.Framework.IsTestBuild)
 		c.ReadTestDefault()
