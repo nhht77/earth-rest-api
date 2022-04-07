@@ -136,7 +136,24 @@ These data structure is created as own `data.go` file name inside `server/pkg`. 
 │   │   ├── api.ts
 │   │   └── testing.ts
 │   └── types
-│       └── earth.ts
-├── test-report.html
+│       └── types.ts
 └── tsconfig.json
 ```
+
+Running your test by `cd test; npm install; npm run test`. the test result can be view in `test/test-report.html` after each test run. Test SHOULD be run with server in testing mode.
+
+### 1. Project base:
+
+- `run/src/api.ts`: HTTP function for making CRUD API request to server
+
+- `run/src/testing.ts`: Contains testing utility function that built on top of jest to make testing code simplier. Also, control 'cache' by API construct.
+
+- `run/types/types.ts`: Contains Typescript class and interface of Continent, Country and City for testing purpose.
+
+- `run/01-test-file-name.specs.ts`: Order by `<number>-testing-purpose.specs.ts` to run each test bundle with a specific purpose.
+
+### 2. Testing implementation:
+
+- Test start with a simple ping test to know if server is up.
+- Each feature is covered with a CRUD testing bundle.
+
