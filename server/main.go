@@ -2,23 +2,19 @@ package main
 
 import (
 	"flag"
-	"os"
 
+	"github.com/nhht77/earth-rest-api/server/pkg/logging"
 	"github.com/nhht77/earth-rest-api/server/pkg/mstring"
-	"github.com/sirupsen/logrus"
 )
 
 var (
-	Log = logrus.New()
+	Log = logging.NewLogger()
 
 	DB        = &Database{}
 	AppConfig = &Config{}
 )
 
 func init_resource() {
-
-	// init logger
-	init_logger()
 
 	// init framework
 	init_framework(AppConfig)
@@ -50,13 +46,6 @@ func main() {
 
 func release_resource() {
 	DB.Close()
-}
-
-func init_logger() {
-	Log.Out = os.Stdout
-	Log.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp: true,
-	})
 }
 
 func init_framework(AppConfig *Config) {
