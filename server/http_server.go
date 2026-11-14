@@ -31,7 +31,7 @@ func RunHTTP() error {
 	router.HandleFunc("/api/v1/city/update", HandleUpdateCity).Methods("PUT")
 	router.HandleFunc("/api/v1/city/delete", HandleDeleteCity).Methods("DELETE")
 
-	return ListenAndServe(":8080", router)
+	return ListenAndServe(":"+AppConfig.Framework.ServerPort, router)
 }
 
 func ListenAndServe(addr string, handler http.Handler) error {
