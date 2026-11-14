@@ -135,3 +135,13 @@ carrying only non-secret defaults."
   `request_id` + duration.
 - `main_test.go` demonstrates asserting on captured log entries.
 - Every phase documented in the progress log of the fast-track doc.
+
+# own note
+take note about error handling
+refactor main
+refactor app
+refactor database
+refactor http
+
+dockerize
+helm chart builder
