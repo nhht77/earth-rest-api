@@ -52,10 +52,16 @@ func init_framework(AppConfig *Config) {
 
 	AppConfig.Framework = &FrameworkConfig{}
 
-	flag.BoolVar(&AppConfig.Framework.IsTestBuild, "-test-build", false, "run test environment and using test database")
-	flag.StringVar(&AppConfig.Framework.ServerPort, "-port", "8080", "server serves and listens at port")
-	flag.StringVar(&AppConfig.Framework.DatabasePort, "-database-port", "5432", "Database port")
-	flag.StringVar(&AppConfig.Framework.DatabaseHost, "-database-host", "localhost", "Database host")
+	// flag names must NOT start with '-' — the flag package adds the dash
+	// itself and panics on names that begin with one (Go >= 1.10).
+	flag.BoolVar(&AppConfig.Framework.IsTestBuild, "test-build", false, "run test environment and using test database")
+	flag.StringVar(&AppConfig.Framework.ServerPort, "port", "8080", "server serves and listens at port")
+	flag.StringVar(&AppConfig.Framework.DatabasePort, "database-port", "5432", "Database port")
+	flag.StringVar(&AppConfig.Framework.DatabaseHost, "database-host", "localhost", "Database host")
+
+	// Parse the command line — without this, every registered flag keeps its
+	// default value and CLI arguments are silently ignored.
+	flag.Parse()
 
 	Log.Info("Framework Config: ", mstring.ToJSON(AppConfig.Framework))
 }

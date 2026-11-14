@@ -3,6 +3,7 @@ package logging
 import (
 	"errors"
 	"os"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -83,8 +84,8 @@ func parseConfig() (logLevel logrus.Level, outputFormat logrus.Formatter, err er
 	// default setting
 	logLevel = logrus.InfoLevel
 	outputFormat = &logrus.JSONFormatter{}
-	level := os.Getenv("LOG_LEVEL")
-	switch level {
+	level := os.Getenv("LOGGING_LEVEL")
+	switch strings.ToLower(level) {
 	case "debug":
 		logLevel = logrus.DebugLevel
 	case "info", "":
@@ -95,10 +96,13 @@ func parseConfig() (logLevel logrus.Level, outputFormat logrus.Formatter, err er
 		logLevel = logrus.ErrorLevel
 	case "fatal":
 		logLevel = logrus.FatalLevel
+	// note: any other value is silently treated as info for now —
+	// documented deviation, see plan Phase 5 for aligning with
+	// operations-execution's log-and-continue behavior.
 	}
-	loggingFormat := os.Getenv("LOGGING_FORMAT")
-	switch loggingFormat {
-	case "json":
+	format := os.Getenv("LOGGING_FORMAT")
+	switch format {
+	case "json", "": // empty means default
 		outputFormat = &logrus.JSONFormatter{
 			TimestampFormat: ISO8601,
 			FieldMap: logrus.FieldMap{
@@ -108,8 +112,8 @@ func parseConfig() (logLevel logrus.Level, outputFormat logrus.Formatter, err er
 				logrus.FieldKeyFunc:  "@caller",
 			},
 		}
-	case "text":
-		outputFormat = &logrus.TextFormatter{}
+	case "text", "txt":
+		outputFormat = &logrus.TextFormatter{FullTimestamp: true}
 	default:
 		return logLevel, outputFormat, errors.New("invalid logging format")
 	}
@@ -124,8 +128,10 @@ func NewLogger() Logger {
 		Formatter: outputFormat,
 		Level:     logLevel,
 	}
+	neoLogger := logger{entry: logrus.NewEntry(l)}
 	if err != nil {
-		l.Error(err)
+		// log through the wrapper so config errors get the same treatment
+		neoLogger.Errorf("Error parsing logger config: %s", err)
 	}
-	return logger{entry: logrus.NewEntry(l)}
+	return neoLogger
 }
