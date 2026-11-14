@@ -74,6 +74,54 @@
       boundary; bad input → 400, no stack. This also preps weakness #1
       (error handling) work.
 
+## Credentials concern (local → containerized → Helm)
+
+Context: earth-rest-api reads DB credentials from env vars (`APP_USERNAME`,
+`APP_PASSWORD`, `APP_DATABASE`) sourced from a plain `env` file at the repo
+root (see README). The repo has **no Dockerfile / Helm chart yet**, so the
+container stages below are requirements to keep in mind when that work
+happens — the point is that the `env` file is a *local-only* mechanism and
+nothing downstream of it may depend on a file existing.
+
+### Local run (today)
+- `env` file with `export` lines, sourced before `./server`:
+  `source env && ./server`
+- The file must stay **gitignored**; DB user should be least-privilege
+  (app schema only)
+
+### When the application is containerized (future)
+- **No env file exists inside a container** — env vars must be injected at
+  `docker run --env-file env` time, never `-e APP_PASSWORD=...` (shell
+  history / `ps` leak)
+- Add `env` to `.dockerignore` so a careless `COPY . .` never bakes
+  credentials into an image layer (immutable artifact, leaks forever)
+- Never log the config struct wholesale (`Log.Info(AppConfig)` is the
+  classic leak) — this intersects with the logging refactor: after
+  Phase 5, sensitive values should be wrapped with a privacy marker
+- Keep `Config` parsing (envconfig-style) as the single ingress for
+  credentials so the container path has exactly one place to audit
+
+### When packaged into a Helm chart (future)
+- **No real credentials in `values.yaml`** — values files get committed;
+  a default password there *is* a leak
+- The chart should *consume* a pre-existing Kubernetes Secret rather than
+  create one from values:
+  `envFrom: [{secretRef: {name: earth-db-credentials}}]`
+- Options for the secret itself, increasing sophistication:
+  1. Pre-provisioned Secret out-of-band (documented name in chart README)
+  2. `helm-secrets` + SOPS-encrypted values
+  3. External Secrets Operator / Vault
+- Never `helm install --set dbPassword=...` — lands in shell history and
+  the rendered release manifest
+- Non-sensitive config (port, feature flags) → ConfigMap; credentials →
+  Secret (base64 is not encryption)
+
+### One-liner for the interview
+"Same three knobs (username/password/database), different injection per
+runtime: env file locally, env vars from the container runtime, and a
+pre-existing Secret referenced by the Helm chart — with values files
+carrying only non-secret defaults."
+
 ## Out of scope (for later plans)
 - Prometheus metrics hook (needs a metrics server in this app).
 - Audit logging (no audit events in this app).
