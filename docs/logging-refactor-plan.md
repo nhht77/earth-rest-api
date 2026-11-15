@@ -27,7 +27,35 @@
 - Handlers/DB access a logger via injection (struct field / `context`), not
   a global.
 
-## Phases (each phase = one green `go build && go test ./...`)
+## Phase order — decision record (2026-11-15)
+
+Preference: **modularize `database/` and `http_server.go` before polishing
+minor logging things.** Revised order:
+
+- [x] ~~Phase 3 — Inject the logger (remove the global)~~ done 15.11.2026
+- [ ] **Phase 3.5 — Modularize (PREFERRED NEXT)**
+      - `database/` package: `database.go` + `database_{city,country,continent}.go`
+        + `Config` DB wiring → own package with constructor (`NewDatabase(log)`)
+      - `endpoints/` (or `http/`) package: `http_server.go` + `http_handlers_*.go`
+        + `handlers.go` → own package; `RunHTTP(h, log)` becomes the package's
+        constructor/entrypoint
+      - `app/` package (new file): composition root — extract
+        `init_resource`/`init_framework`/`RunHTTP` glue from `main.go`;
+        `main.go` shrinks to the ~20-line script (build logger, wire signal,
+        app.Setup, app.Run)
+      - `pkg/logging` context helpers already exist (NewContext/FromContext) —
+        middleware can move with http_server.go later (Phase 4 folds into this)
+- [ ] **Phase 4 — request correlation** (folds into 3.5's `endpoints/` package:
+      request-ID middleware, FromContext in handlers, monitor line with
+      duration+status)
+- [ ] **Phase 5 — error classification + stack trace polish** (DB errors → 500
+      in handlers; `exit` var already in place for Fatal)
+
+Rationale: modularizing now (while components are freshly injected) is the
+mechanical, high-value step; Phase 4/5 polish is better done once files live
+in their final packages so the work isn't moved twice.
+
+## Phase order (original)
 
 ### Phase 1 — Create the logging package (additive, no callers changed)
 - [ ] `server/pkg/logging/logging.go`: `Logger` interface + `logger` struct
