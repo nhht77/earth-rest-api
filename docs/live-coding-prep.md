@@ -80,6 +80,10 @@ draining its channel on ctx.Done, logs "shutdown complete".
 Each item: the concepts to nail, the gotchas I hit, exercise idea. Work
 through one per sitting.
 
+> **Executable version:** all §4 scenarios are implemented as runnable tests
+> in `server/livecoding/` — run `go test -race -v ./server/livecoding/`.
+> Read the code *before* re-implementing from memory (that's the exercise).
+
 ### 4.1 Values & mutation (arrays, structs, copies)
 - [ ] Primitive array copy — arrays are *values* in Go: `b := a` is a full copy
 - [ ] Struct array copy — copy is shallow; contained pointers/slices still shared!
