@@ -122,6 +122,53 @@ runtime: env file locally, env vars from the container runtime, and a
 pre-existing Secret referenced by the Helm chart — with values files
 carrying only non-secret defaults."
 
+## Architecture notes: repo organization (pkg/svc monorepo pattern)
+
+Observation while studying: the AANM Go monorepo (`~/dev/go`) splits code as
+`pkg/` (shared libraries: logging, tracing, kafkatable, mariadb, runner —
+no `main()`, not deployable) and `svc/` (deployables: operations-execution,
+operations-feedback — each with own Dockerfile, Jenkinsfile, helm/).
+Jenkins builds each `svc/*` independently.
+
+Key distinction learned:
+
+| Axis | Question | Example |
+|---|---|---|
+| Deployable boundary | Should this *run* as a separate service? | operations-execution vs operations-feedback — justified by ownership/scale/isolation |
+| Repo organization | How to *arrange code* for services? | `pkg/` + `svc/` in one repo |
+
+The monorepo does NOT imply splitting the domain — cities/continents stay in
+one service regardless. Split deployables on team/scale boundaries only.
+
+### AANM monorepo mechanics
+- **One root `go.mod`** — all services share dependency versions; a `pkg/`
+  change is instantly visible everywhere (plus: one CI pipeline, atomic
+  cross-service PRs; minus: lockstep upgrades, CI blast radius)
+- **Cross-service contracts as code**: generated clients under
+  `pkg/operations/api/*`, `contract_test/` consumer suites
+- **`svc/<name>/` self-contained**: `cmd/`, `app/`, `endpoints/`, `helm/`,
+  `Dockerfile`, `Jenkinsfile`
+
+### Earth-rest-api mapping (right-sized)
+Today it has one deployable, so full pkg/svc is overkill. The honest layout:
+
+```
+earth-rest-api/
+├── pkg/       ← shared: logging (new), mhttp, msql, muuid (exist)
+└── server/    ← the one deployable (rename to svc/ only if a 2nd appears)
+```
+
+Teaches the layout without pretending the domain justifies multiple services.
+
+### Decision record (why NOT a microservice split of the domain)
+- cities → countries → continents is a real relational chain (`JOIN`s today,
+  network hops + cross-service transactions if split)
+- three deployables for a tiny domain = deployment/observability overhead
+  without a scaling need — operations-execution's own README documents the
+  distributed-state pain (Kafka + lease manager) that splitting creates
+- revisit only if: separate team ownership, independent scaling needs, or
+  isolated failure domains emerge
+
 ## Out of scope (for later plans)
 - Prometheus metrics hook (needs a metrics server in this app).
 - Audit logging (no audit events in this app).
