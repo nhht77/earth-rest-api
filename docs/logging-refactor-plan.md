@@ -200,6 +200,27 @@ Teaches the layout without pretending the domain justifies multiple services.
 - revisit only if: separate team ownership, independent scaling needs, or
   isolated failure domains emerge
 
+### LATE REFACTOR note (2026-11-15): shared framework vs per-service ownership
+Discussion outcome (keep for a future split — not part of current phases):
+
+- If the domain is ever split into city/country/continent services, do NOT
+  share `database/` across services (one shared pkg/database = shared schema
+  = lockstep deploys = distributed monolith). Each service owns its own
+  database/queries + config keys + routes.
+- What IS shared lives in `pkg/`: logging, mhttp (router bootstrap,
+  Request/Monitor middleware, ListenAndServe), msql (connect/ping/migrate
+  runner), muuid — mechanism only, no domain.
+- AANM monorepo evidence: `svc/*/cmd/main.go` md5s all differ — the "common
+  main.go" is a copy-paste template convention, NOT inherited code. Shared
+  extension points live in `pkg/runner` (`app.Context{Closers, Runners:
+  []runner.Runnable{}}`); each svc's `app.Setup` fills them in.
+- Rule to remember: "share pkg, copy the template, per-service ownership of
+  app/cmd/database/endpoints." pkg exports extension points; services
+  implement use-cases; main is per-service glue, never shared.
+- Mechanism/use-case split inside current code when extracting:
+  `MonitorMiddleware`/`ListenAndServe` → pkg/mhttp-shaped mechanism;
+  the `router.HandleFunc(...)` table → use-case.
+
 ## Out of scope (for later plans)
 - Prometheus metrics hook (needs a metrics server in this app).
 - Audit logging (no audit events in this app).
