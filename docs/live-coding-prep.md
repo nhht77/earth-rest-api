@@ -75,6 +75,54 @@ operations-execution's whole API takes `ctx` first — including the logger.
 `http.Server.Shutdown(ctx)` with 5s timeout, a background worker stops
 draining its channel on ctx.Done, logs "shutdown complete".
 
+## 4. Practice backlog (my drafts — from hands-on exploration)
+
+Each item: the concepts to nail, the gotchas I hit, exercise idea. Work
+through one per sitting.
+
+### 4.1 Values & mutation (arrays, structs, copies)
+- [ ] Primitive array copy — arrays are *values* in Go: `b := a` is a full copy
+- [ ] Struct array copy — copy is shallow; contained pointers/slices still shared!
+- [ ] Struct copy — value receiver mutates a copy; pointer receiver mutates the original
+- [ ] Slice vs array: a slice copy shares the backing array → mutations leak across "copies"
+- Exercise: table-driven tests asserting what mutated and what didn't
+
+### 4.2 Error checking
+- [ ] `errors.New` + custom sentinel error types
+- [ ] `errors.Is` — matching through `%w`-wrapped chains
+- [ ] `errors.As` — extracting a typed error
+- Exercise: build a 3-level error chain, assert `Is` + `As` behavior
+
+### 4.3 Goroutines incrementing the same counter
+- [ ] Unprotected increment → data race (prove with `go test -race`)
+- [ ] Fix with `sync.Mutex`; alternative `atomic.AddInt64`
+- [ ] `sync.WaitGroup` (Add/defer Done/Wait) to know when all finish
+- [ ] `go func() {}()` — inline goroutine; who owns/stops it?
+- Exercise: same counter, 3 versions (broken/mutex/atomic), each with a test
+
+### 4.4 Context cancel & done (`fetchReport`)
+- [ ] Exhaustive select: both `timer.C` and `ctx.Done()` cases — commenting one
+      out makes the test vacuous (the timer case "passes" after 2s regardless)
+- [ ] **`go vet` catches leaked cancels**: `ctx, _ := WithTimeout(...)` without
+      `defer cancel()` → vet error "the cancel function is not used on all paths"
+- [ ] `context.DeadlineExceeded` vs `context.Canceled` — which one fires?
+- Already partially done in `pkg/logging/logging_test.go` (fetchReport exercise)
+
+### 4.5 FIFO channel (buffered) — the socket analogy
+- [ ] Buffered vs unbuffered: queue vs synchronous rendezvous
+- [ ] `close` + `range` drain semantics; send-after-close panics; receive from
+      closed+empty gives zero value with `ok == false`
+- [ ] TCP/UDP analogy: channel ≈ socket buffer; close ≈ FIN
+- ⚠️ gotcha hit: function named `testFIFO...` — tests MUST start with `Test`
+- Exercise: assert the panic on post-close send + the `ok == false` receive
+
+### 4.6 Expiring cache (single entry / whole list)
+- [ ] Per-entry TTL: `map[K]entry{value, expiresAt}`; lazy expiry on read
+- [ ] Whole-cache TTL: single timestamp; simplest correct approach
+- [ ] Janitor goroutine for eager expiry — must own its stop channel (who stops it?)
+- Exercise: expiring cache with `Get/Set`, expiry tests using injected clock
+  (not `time.Sleep`) — clock injection is the interview-grade answer
+
 ## How to practice (low-energy-friendly)
 
 - One exercise per sitting, 30–45 min, in `gowolt` — repo is tiny on purpose
