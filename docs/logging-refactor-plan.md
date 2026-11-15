@@ -48,16 +48,19 @@
 - [ ] Verify output changed: run server, see JSON on stderr with
       `logger: file.go:NN` fields.
 
-### Phase 3 — Inject the logger (remove the global)
-- [ ] `Config`/`Database`/handlers: add `Log logging.Logger` field.
-- [ ] `main.go`: construct once, inject everywhere (composition-root style:
+### Phase 3 — Inject the logger (remove the global) ✅ done 15.11.2026
+- [x] `Config`/`Database`/handlers: add `Log logging.Logger` field.
+- [x] `main.go`: constructs once, inject everywhere (composition-root style:
       only `main.go` knows `NewLogger`).
-- [ ] `pkg/mhttp`: take `log logging.Logger` parameter (it's a helper package
-      — constructor `mhttp.New(log)`).
-- [ ] Grep proves zero package-global logger access.
-- [ ] `main_test.go`: inject a capturing test logger
-      (add `loggingtest` variant: logger writing to a bytes buffer with
-      `GetEntries()`-style access).
+- [x] `pkg/mhttp`: verified pure (no logging) — response helpers stay
+      parameter-only by design.
+- [x] Handlers converted to `*Handlers` struct methods (15 handlers across
+      city/country/continent files); `RunHTTP(h *Handlers, log)` and
+      `MonitorMiddleware(log)` factory pattern.
+- [x] Database built with field init: `DB = &Database{Log: Log}` (nil-field
+      panic encountered and fixed — lesson banked).
+- Remaining: payoff test (construct `Database` with test logger and assert
+  on captured entries) — can land with Phase 4's loggingtest helper.
 
 ### Phase 4 — Request correlation (middleware + context)
 - [ ] Add a `RequestLogger` middleware: create `logger.With(request_id,
@@ -192,3 +195,11 @@ refactor http
 
 dockerize
 helm chart builder
+
+# live interview prep with golang chat gpt
++ problem
++ solution
+
++ stack/queue (can be cache) 
++ goroutine in different scenario (parall, async)
++ golang Context -> stop function with graceful shutdown
