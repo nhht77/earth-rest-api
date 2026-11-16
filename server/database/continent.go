@@ -1,4 +1,4 @@
-package main
+package database
 
 import (
 	"database/sql"
@@ -99,7 +99,7 @@ func (db *Database) ContinentsByOptions(options ContinentQueryOptions) ([]*pkg_v
 	}
 
 	rows, err := db.postgres.Query(query)
-	CheckOperation("ContinentsByOptions", err, started)
+	db.CheckOperation("ContinentsByOptions", err, started)
 	if err != nil {
 		return results, err
 	}
@@ -129,13 +129,13 @@ func (db *Database) ContinentsByOptions(options ContinentQueryOptions) ([]*pkg_v
 
 			results = append(results, curr)
 		} else {
-			Log.Warnf("DB.ContinentsByOptions Scan error - %s", err.Error())
+			db.Log.Warnf("db.ContinentsByOptions Scan error - %s", err.Error())
 			rows.Close()
 			break
 		}
 	}
 	if err = rows.Err(); err != nil {
-		Log.Warnf("DB.ContinentsByOptions error - %s", err.Error())
+		db.Log.Warnf("db.ContinentsByOptions error - %s", err.Error())
 		rows.Close()
 		return results, err
 	}
@@ -187,7 +187,7 @@ func (db *Database) ContinentByUuid(tx *sql.Tx, uuid string) (*pkg_v1.Continent,
 		result.Updated = updated.Time
 	}
 
-	CheckOperation("ContinentByUuid", err, started)
+	db.CheckOperation("ContinentByUuid", err, started)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func (db *Database) ContinentUuidByIndex(tx *sql.Tx, index msql.DatabaseIndex) (
 			index,
 		)).Scan(&uuid)
 
-	CheckOperation("ContinentUuidByIndex", err, started)
+	db.CheckOperation("ContinentUuidByIndex", err, started)
 	if err != nil {
 		return uuid, err
 	}
@@ -244,7 +244,7 @@ func (db *Database) ContinentUuidsByIndexes(indexes msql.DatabaseIndexList) (map
 			indexes.String(),
 		))
 
-	CheckOperation("ContinentUuidsByIndexes", err, started)
+	db.CheckOperation("ContinentUuidsByIndexes", err, started)
 	if err != nil {
 		return indexes_map, err
 	}
@@ -261,7 +261,7 @@ func (db *Database) ContinentUuidsByIndexes(indexes msql.DatabaseIndexList) (map
 		); err == nil {
 			indexes_map[curr_index] = curr_uuid
 		} else {
-			CheckOperation("ContinentUuidsByIndexes Scan error", err, started)
+			db.CheckOperation("ContinentUuidsByIndexes Scan error", err, started)
 			rows.Close()
 			break
 		}
@@ -290,7 +290,7 @@ func (db *Database) ContinentIndexByUuid(tx *sql.Tx, uuid muuid.UUID) (msql.Data
 			uuid.String(),
 		)).Scan(&index)
 
-	CheckOperation("ContinentIndexByUuid", err, started)
+	db.CheckOperation("ContinentIndexByUuid", err, started)
 	if err != nil {
 		return index, err
 	}
@@ -325,7 +325,7 @@ func (db *Database) ContinentUuidsByIndex(tx *sql.Tx, indexes msql.DatabaseIndex
 
 	}
 
-	CheckOperation("ContinentByUuid", err, started)
+	db.CheckOperation("ContinentByUuid", err, started)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +355,7 @@ func (db *Database) CreateContinent(tx *sql.Tx, continent *pkg_v1.Continent) (*p
 		return nil, err
 	}
 
-	type_exist, err := DB.IsContinentTypeExist(tx, continent)
+	type_exist, err := db.IsContinentTypeExist(tx, continent)
 	if err != nil {
 		return nil, err
 	}
@@ -392,12 +392,12 @@ func (db *Database) CreateContinent(tx *sql.Tx, continent *pkg_v1.Continent) (*p
 			continent.AreaByKm2,
 			json_creator,
 		))
-	CheckOperation("CreateContinent", err, started)
+	db.CheckOperation("CreateContinent", err, started)
 	if err != nil {
 		return nil, err
 	}
 
-	return DB.ContinentByUuid(tx, uuid.String())
+	return db.ContinentByUuid(tx, uuid.String())
 }
 
 // update continent
@@ -411,7 +411,7 @@ func (db *Database) UpdateContinent(tx *sql.Tx, continent *pkg_v1.Continent) (*p
 		return nil, err
 	}
 
-	type_exist, err := DB.IsContinentTypeExist(tx, continent)
+	type_exist, err := db.IsContinentTypeExist(tx, continent)
 	if err != nil {
 		return nil, err
 	}
@@ -437,12 +437,12 @@ func (db *Database) UpdateContinent(tx *sql.Tx, continent *pkg_v1.Continent) (*p
 			continent.AreaByKm2,
 			continent.Uuid.String(),
 		))
-	CheckOperation("UpdateContinent", err, started)
+	db.CheckOperation("UpdateContinent", err, started)
 	if err != nil {
 		return nil, err
 	}
 
-	return DB.ContinentByUuid(tx, continent.Uuid.String())
+	return db.ContinentByUuid(tx, continent.Uuid.String())
 }
 
 // delete continent
@@ -461,7 +461,7 @@ func (db *Database) SoftDeleteContinent(tx *sql.Tx, uuid string) error {
 		msql.SoftDeleted,
 		uuid,
 	))
-	CheckOperation("SoftDeleteContinent", err, started)
+	db.CheckOperation("SoftDeleteContinent", err, started)
 	if err != nil {
 		return err
 	}

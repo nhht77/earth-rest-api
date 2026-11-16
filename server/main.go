@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 
+	"github.com/nhht77/earth-rest-api/server/config"
+	"github.com/nhht77/earth-rest-api/server/database"
 	"github.com/nhht77/earth-rest-api/server/pkg/logging"
 	"github.com/nhht77/earth-rest-api/server/pkg/mstring"
 )
@@ -10,18 +12,18 @@ import (
 var (
 	Log = logging.NewLogger()
 
-	DB        = &Database{}
-	AppConfig = &Config{}
+	db      = database.NewDatabase(Log)
+	appConf = &config.Config{}
 )
 
 func init_resource() {
 
 	// init framework
-	init_framework(AppConfig)
+	init_framework(appConf)
 
-	AppConfig.ReadDefault()
+	appConf.ReadDefault(*appConf, Log)
 
-	if err := DB.Initialize(AppConfig); err != nil {
+	if err := db.Initialize(appConf); err != nil {
 		release_resource()
 		Log.Fatalf("Error: open connection %s", err.Error())
 		return
@@ -33,11 +35,11 @@ func main() {
 
 	// Note: clean table after each resource release
 	// @todo Temp solution until wrap application in docker container
-	if AppConfig.Framework.IsTestBuild {
-		DB._ClearTable()
+	if appConf.Framework.IsTestBuild {
+		db.ClearTable()
 	}
 
-	if err := RunHTTP(); err != nil {
+	if err := RunHTTP(appConf, NewHandlers(db, Log)); err != nil {
 		release_resource()
 		Log.Fatalf("[mhttp] RunHTTP error %s", err.Error())
 		return
@@ -45,23 +47,23 @@ func main() {
 }
 
 func release_resource() {
-	DB.Close()
+	db.Close()
 }
 
-func init_framework(AppConfig *Config) {
+func init_framework(appConf *config.Config) {
 
-	AppConfig.Framework = &FrameworkConfig{}
+	appConf.Framework = &config.FrameworkConfig{}
 
 	// flag names must NOT start with '-' — the flag package adds the dash
 	// itself and panics on names that begin with one (Go >= 1.10).
-	flag.BoolVar(&AppConfig.Framework.IsTestBuild, "test-build", false, "run test environment and using test database")
-	flag.StringVar(&AppConfig.Framework.ServerPort, "port", "8080", "server serves and listens at port")
-	flag.StringVar(&AppConfig.Framework.DatabasePort, "database-port", "5432", "Database port")
-	flag.StringVar(&AppConfig.Framework.DatabaseHost, "database-host", "localhost", "Database host")
+	flag.BoolVar(&appConf.Framework.IsTestBuild, "test-build", false, "run test environment and using test database")
+	flag.StringVar(&appConf.Framework.ServerPort, "port", "8080", "server serves and listens at port")
+	flag.StringVar(&appConf.Framework.DatabasePort, "database-port", "5432", "Database port")
+	flag.StringVar(&appConf.Framework.DatabaseHost, "database-host", "localhost", "Database host")
 
 	// Parse the command line — without this, every registered flag keeps its
 	// default value and CLI arguments are silently ignored.
 	flag.Parse()
 
-	Log.Info("Framework Config: ", mstring.ToJSON(AppConfig.Framework))
+	Log.Info("Framework Config: ", mstring.ToJSON(appConf.Framework))
 }

@@ -1,4 +1,4 @@
-package main
+package database
 
 import (
 	"database/sql"
@@ -8,33 +8,40 @@ import (
 
 	_ "github.com/lib/pq"
 
+	"github.com/nhht77/earth-rest-api/server/config"
+	"github.com/nhht77/earth-rest-api/server/pkg/logging"
 	"github.com/nhht77/earth-rest-api/server/pkg/msql"
 	"github.com/nhht77/earth-rest-api/server/pkg/mstring"
 )
 
 type Database struct {
 	postgres *sql.DB
+	Log      logging.Logger
 }
 
-func (db *Database) Initialize(c *Config) error {
+func NewDatabase(log logging.Logger) *Database {
+	return &Database{Log: log}
+}
+
+func (db *Database) Initialize(c *config.Config) error {
 
 	if err := c.ValidateConfig(); err != nil {
 		return err
 	}
 
-	Log.Infof(
+	db.Log.Infof(
 		"[postgre] Database Source: %s",
 		c.DatabaseSourcePrintable(
-			AppConfig.Framework.DatabaseHost,
-			AppConfig.Framework.DatabasePort,
+			c.Framework.DatabaseHost,
+			c.Framework.DatabasePort,
 		),
 	)
 
 	result, err := sql.Open(
 		"postgres",
 		c.DatabaseSource(
-			AppConfig.Framework.DatabaseHost,
-			AppConfig.Framework.DatabasePort,
+			c.Framework.DatabaseHost,
+			c.Framework.DatabasePort,
 		))
 	if err != nil {
 		return err
@@ -71,7 +78,7 @@ func (db *Database) Initialize(c *Config) error {
 					return fmt.Errorf("[postgre] %s #%d: %s", migration_file, stmt_idx+1, err.Error())
 				}
 				if condition_value {
-					Log.Infof("[postgre] %s #%d skipped due to condition result is true", migration_file, stmt_idx+1)
+					db.Log.Infof("[postgre] %s #%d skipped due to condition result is true", migration_file, stmt_idx+1)
 					continue
 				}
 			}
@@ -89,7 +96,7 @@ func (db *Database) Initialize(c *Config) error {
 			changed := db.resultChange(results)
 			if changed || !tableCreated {
 				duration := time.Since(started)
-				Log.Infof("[postgre] %s #%d ran in %s", migration_file, stmt_idx+1, duration.String())
+				db.Log.Infof("[postgre] %s #%d ran in %s", migration_file, stmt_idx+1, duration.String())
 			}
 		}
 	}
@@ -150,7 +157,7 @@ func DatabaseNoResults(err error) bool {
 	return err == sql.ErrNoRows
 }
 
-func CheckOperation(op string, err error, started time.Time) bool {
+func (db *Database) CheckOperation(op string, err error, started time.Time) bool {
 	spent := ""
 	if !started.IsZero() {
 		spent = time.Since(started).String()
@@ -158,15 +165,15 @@ func CheckOperation(op string, err error, started time.Time) bool {
 
 	hasError := err != nil && err != sql.ErrNoRows
 	if hasError {
-		Log.Errorf("[postgre] DB.%s error: %s (%s)", op, err.Error(), spent)
+		db.Log.Errorf("[postgre] db.%s error: %s (%s)", op, err.Error(), spent)
 		return true
 	}
 
-	Log.Infof("[postgre] DB.%s %s", op, spent)
+	db.Log.Infof("[postgre] db.%s %s", op, spent)
 	return hasError == false
 }
 
-func (db *Database) _ClearTable() error {
+func (db *Database) ClearTable() error {
 
 	tables := map[string]string{
 		"continent": "continent_index_seq",
@@ -176,11 +183,11 @@ func (db *Database) _ClearTable() error {
 
 	clear_table_by_map := func(tx *sql.Tx, tables map[string]string) error {
 		for table, sequence := range tables {
-			_, err := DB.Exec(tx, fmt.Sprintf("TRUNCATE %s CASCADE", table))
+			_, err := db.Exec(tx, fmt.Sprintf("TRUNCATE %s CASCADE", table))
 			if err != nil {
 				return err
 			}
-			_, err = DB.Exec(tx, fmt.Sprintf("ALTER SEQUENCE %s RESTART WITH 1", sequence))
+			_, err = db.Exec(tx, fmt.Sprintf("ALTER SEQUENCE %s RESTART WITH 1", sequence))
 			if err != nil {
 				return err
 			}
@@ -188,21 +195,21 @@ func (db *Database) _ClearTable() error {
 		return nil
 	}
 
-	tx, err := DB.Begin()
+	tx, err := db.Begin()
 	if err != nil {
-		Log.Fatal("[testing] clearTable DB.Begin error", err)
+		db.Log.Fatal("[testing] clearTable db.Begin error", err)
 		return err
 	}
 
 	if err := clear_table_by_map(tx, tables); err != nil {
-		DB.Rollback(tx)
-		Log.Fatal("[testing] clearTable clear_table_by_map error", err)
+		db.Rollback(tx)
+		db.Log.Fatal("[testing] clearTable clear_table_by_map error", err)
 		return err
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		Log.Fatal("[testing] clearTable tx.Commit error", err)
+		db.Log.Fatal("[testing] clearTable tx.Commit error", err)
 		return err
 	}
 

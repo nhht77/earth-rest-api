@@ -1,4 +1,4 @@
-package main
+package database
 
 import (
 	"database/sql"
@@ -82,7 +82,7 @@ func (db *Database) CitiesByOptions(options CityQueryOptions) ([]*pkg_v1.City, e
 	}
 
 	rows, err := db.postgres.Query(query)
-	CheckOperation("CitysByOptions", err, started)
+	db.CheckOperation("CitysByOptions", err, started)
 	if err != nil {
 		return results, err
 	}
@@ -113,18 +113,18 @@ func (db *Database) CitiesByOptions(options CityQueryOptions) ([]*pkg_v1.City, e
 
 			results = append(results, curr)
 		} else {
-			Log.Warnf("DB.CitiesByOptions Scan error - %s", err.Error())
+			db.Log.Warnf("db.CitiesByOptions Scan error - %s", err.Error())
 			rows.Close()
 			break
 		}
 	}
 	if err = rows.Err(); err != nil {
-		Log.Warnf("DB.CitiesByOptions error - %s", err.Error())
+		db.Log.Warnf("db.CitiesByOptions error - %s", err.Error())
 		rows.Close()
 		return results, err
 	}
 
-	filter_results, err := DB.ToCities(started, results, options)
+	filter_results, err := db.ToCities(started, results, options)
 	if err != nil {
 		return results, err
 	}
@@ -137,18 +137,18 @@ func (db *Database) ToCities(started time.Time, cities pkg_v1.CityList, options 
 		started = time.Now()
 	}
 
-	continents, err := DB.ContinentsByOptions(ContinentQueryOptions{
+	continents, err := db.ContinentsByOptions(ContinentQueryOptions{
 		Types: options.ContinentTypes,
 	})
-	CheckOperation("ToCities ", err, started)
+	db.CheckOperation("ToCities ", err, started)
 	if err != nil {
 		return pkg_v1.CityList{}, err
 	}
 
-	countries, err := DB.CountriesByOptions(CountryQueryOptions{
+	countries, err := db.CountriesByOptions(CountryQueryOptions{
 		CountryUuids: options.CountryUuids,
 	})
-	CheckOperation("ToCities ", err, started)
+	db.CheckOperation("ToCities ", err, started)
 	if err != nil {
 		return pkg_v1.CityList{}, err
 	}
@@ -240,17 +240,17 @@ func (db *Database) CityByUuid(tx *sql.Tx, uuid string) (*pkg_v1.City, error) {
 		result.Updated = updated.Time
 	}
 
-	CheckOperation("CityByUuid", err, started)
+	db.CheckOperation("CityByUuid", err, started)
 	if err != nil {
 		return nil, err
 	}
 
-	continent_uuid, err := DB.ContinentUuidByIndex(tx, result.ContinentIndex)
+	continent_uuid, err := db.ContinentUuidByIndex(tx, result.ContinentIndex)
 	if err != nil {
 		return nil, err
 	}
 
-	country_uuid, err := DB.CountryUuidByIndex(tx, result.CountryIndex)
+	country_uuid, err := db.CountryUuidByIndex(tx, result.CountryIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -291,12 +291,12 @@ func (db *Database) CreateCity(tx *sql.Tx, city *pkg_v1.City) (*pkg_v1.City, err
 		return nil, err
 	}
 
-	country, err := DB.CountryByUuid(tx, city.CountryUuid.String())
+	country, err := db.CountryByUuid(tx, city.CountryUuid.String())
 	if err != nil {
 		return nil, err
 	}
 
-	is_exist, err := DB.IsCapitalExist(tx, city, country)
+	is_exist, err := db.IsCapitalExist(tx, city, country)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +321,7 @@ func (db *Database) CreateCity(tx *sql.Tx, city *pkg_v1.City) (*pkg_v1.City, err
 		}
 	)
 
-	continent_index, err := DB.ContinentIndexByUuid(tx, city.ContinentUuid)
+	continent_index, err := db.ContinentIndexByUuid(tx, city.ContinentUuid)
 	if err != nil {
 		return nil, err
 	}
@@ -341,12 +341,12 @@ func (db *Database) CreateCity(tx *sql.Tx, city *pkg_v1.City) (*pkg_v1.City, err
 			json_details,
 			json_creator,
 		))
-	CheckOperation("CreateCity", err, started)
+	db.CheckOperation("CreateCity", err, started)
 	if err != nil {
 		return nil, err
 	}
 
-	return DB.CityByUuid(tx, uuid.String())
+	return db.CityByUuid(tx, uuid.String())
 }
 
 func (db *Database) UpdateCity(tx *sql.Tx, city *pkg_v1.City) (*pkg_v1.City, error) {
@@ -359,12 +359,12 @@ func (db *Database) UpdateCity(tx *sql.Tx, city *pkg_v1.City) (*pkg_v1.City, err
 		return nil, err
 	}
 
-	country, err := DB.CountryByUuid(tx, city.CountryUuid.String())
+	country, err := db.CountryByUuid(tx, city.CountryUuid.String())
 	if err != nil {
 		return nil, err
 	}
 
-	is_exist, err := DB.IsCapitalExist(tx, city, country)
+	is_exist, err := db.IsCapitalExist(tx, city, country)
 	if err != nil {
 		return nil, err
 	}
@@ -389,12 +389,12 @@ func (db *Database) UpdateCity(tx *sql.Tx, city *pkg_v1.City) (*pkg_v1.City, err
 			json_details,
 			city.Uuid.String(),
 		))
-	CheckOperation("UpdateCity", err, started)
+	db.CheckOperation("UpdateCity", err, started)
 	if err != nil {
 		return nil, err
 	}
 
-	return DB.CityByUuid(tx, city.Uuid.String())
+	return db.CityByUuid(tx, city.Uuid.String())
 }
 
 func (db *Database) SoftDeleteCity(tx *sql.Tx, uuid string) error {
@@ -412,7 +412,7 @@ func (db *Database) SoftDeleteCity(tx *sql.Tx, uuid string) error {
 		msql.SoftDeleted,
 		uuid,
 	))
-	CheckOperation("SoftDeleteCity", err, started)
+	db.CheckOperation("SoftDeleteCity", err, started)
 	if err != nil {
 		return err
 	}

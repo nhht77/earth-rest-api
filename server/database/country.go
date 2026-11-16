@@ -1,4 +1,4 @@
-package main
+package database
 
 import (
 	"database/sql"
@@ -84,7 +84,7 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.Coun
 	}
 
 	rows, err := db.postgres.Query(query)
-	CheckOperation("CountrysByOptions", err, started)
+	db.CheckOperation("CountrysByOptions", err, started)
 	if err != nil {
 		return results, err
 	}
@@ -114,18 +114,18 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.Coun
 
 			results = append(results, curr)
 		} else {
-			CheckOperation("CountriesByOptions Scan error", err, started)
+			db.CheckOperation("CountriesByOptions Scan error", err, started)
 			rows.Close()
 			break
 		}
 	}
 	if err = rows.Err(); err != nil {
-		CheckOperation("CountrysByOptions", err, started)
+		db.CheckOperation("CountrysByOptions", err, started)
 		rows.Close()
 		return results, err
 	}
 
-	filters, err := ToCountries(started, results, options)
+	filters, err := ToCountries(db, started, results, options)
 	if err != nil {
 		return results, err
 	}
@@ -133,14 +133,14 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.Coun
 	return filters, nil
 }
 
-func ToCountries(started time.Time, countries pkg_v1.CountryList, options CountryQueryOptions) (pkg_v1.CountryList, error) {
+func ToCountries(db *Database, started time.Time, countries pkg_v1.CountryList, options CountryQueryOptions) (pkg_v1.CountryList, error) {
 
 	if started.IsZero() {
 		started = time.Now()
 	}
 
-	continents, err := DB.ContinentsByOptions(ContinentQueryOptions{Types: options.ContinentTypes})
-	CheckOperation("ToCountries ", err, started)
+	continents, err := db.ContinentsByOptions(ContinentQueryOptions{Types: options.ContinentTypes})
+	db.CheckOperation("ToCountries ", err, started)
 	if err != nil {
 		return pkg_v1.CountryList{}, err
 	}
@@ -216,14 +216,14 @@ func (db *Database) CountryByUuid(tx *sql.Tx, uuid string) (*pkg_v1.Country, err
 		result.Updated = updated.Time
 	}
 
-	CheckOperation("CountryByUuid", err, started)
+	db.CheckOperation("CountryByUuid", err, started)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get continent uuid
 	{
-		continent_uuid, err := DB.ContinentUuidByIndex(tx, result.ContinentIndex)
+		continent_uuid, err := db.ContinentUuidByIndex(tx, result.ContinentIndex)
 		if err != nil {
 			return nil, err
 		}
@@ -260,7 +260,7 @@ func (db *Database) CreateCountry(tx *sql.Tx, country *pkg_v1.Country) (*pkg_v1.
 		return nil, err
 	}
 
-	is_exist, err := DB.IsCountryExist(tx, country)
+	is_exist, err := db.IsCountryExist(tx, country)
 	if err != nil {
 		return nil, err
 	}
@@ -284,8 +284,8 @@ func (db *Database) CreateCountry(tx *sql.Tx, country *pkg_v1.Country) (*pkg_v1.
 		}
 	)
 
-	continent_index, err := DB.ContinentIndexByUuid(tx, country.ContinentUuid)
-	CheckOperation("CreateCountry Continent Uuud", err, started)
+	continent_index, err := db.ContinentIndexByUuid(tx, country.ContinentUuid)
+	db.CheckOperation("CreateCountry Continent Uuud", err, started)
 	if err != nil {
 		return nil, err
 	}
@@ -304,12 +304,12 @@ func (db *Database) CreateCountry(tx *sql.Tx, country *pkg_v1.Country) (*pkg_v1.
 			json_details,
 			json_creator,
 		))
-	CheckOperation("CreateCountry", err, started)
+	db.CheckOperation("CreateCountry", err, started)
 	if err != nil {
 		return nil, err
 	}
 
-	return DB.CountryByUuid(tx, uuid.String())
+	return db.CountryByUuid(tx, uuid.String())
 }
 
 func (db *Database) UpdateCountry(tx *sql.Tx, country *pkg_v1.Country) (*pkg_v1.Country, error) {
@@ -322,7 +322,7 @@ func (db *Database) UpdateCountry(tx *sql.Tx, country *pkg_v1.Country) (*pkg_v1.
 		return nil, err
 	}
 
-	type_exist, err := DB.IsCountryExist(tx, country)
+	type_exist, err := db.IsCountryExist(tx, country)
 	if err != nil {
 		return nil, err
 	}
@@ -347,12 +347,12 @@ func (db *Database) UpdateCountry(tx *sql.Tx, country *pkg_v1.Country) (*pkg_v1.
 			json_details,
 			country.Uuid.String(),
 		))
-	CheckOperation("UpdateCountry", err, started)
+	db.CheckOperation("UpdateCountry", err, started)
 	if err != nil {
 		return nil, err
 	}
 
-	return DB.CountryByUuid(tx, country.Uuid.String())
+	return db.CountryByUuid(tx, country.Uuid.String())
 }
 
 func (db *Database) SoftDeleteCountry(tx *sql.Tx, uuid string) error {
@@ -370,7 +370,7 @@ func (db *Database) SoftDeleteCountry(tx *sql.Tx, uuid string) error {
 		msql.SoftDeleted,
 		uuid,
 	))
-	CheckOperation("SoftDeleteCountry", err, started)
+	db.CheckOperation("SoftDeleteCountry", err, started)
 	if err != nil {
 		return err
 	}
@@ -398,7 +398,7 @@ func (db *Database) CountryUuidByIndex(tx *sql.Tx, index msql.DatabaseIndex) (mu
 			index,
 		)).Scan(&uuid)
 
-	CheckOperation("CountryUuidByIndex", err, started)
+	db.CheckOperation("CountryUuidByIndex", err, started)
 	if err != nil {
 		return uuid, err
 	}
@@ -426,7 +426,7 @@ func (db *Database) CountryIndexByUuid(tx *sql.Tx, uuid muuid.UUID) (msql.Databa
 			uuid.String(),
 		)).Scan(&index)
 
-	CheckOperation("CountryIndexByUuid", err, started)
+	db.CheckOperation("CountryIndexByUuid", err, started)
 	if err != nil {
 		return index, err
 	}

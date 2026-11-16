@@ -6,7 +6,8 @@ import (
 	"os"
 	"testing"
 
-	main "github.com/nhht77/earth-rest-api/server"
+	"github.com/nhht77/earth-rest-api/server/config"
+	"github.com/nhht77/earth-rest-api/server/database"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,8 +18,8 @@ var (
 		return log
 	}()
 
-	DB        = &main.Database{}
-	AppConfig = &main.Config{}
+	DB        = &database.Database{}
+	AppConfig = &config.Config{}
 )
 
 func TestMain(m *testing.M) {

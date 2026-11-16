@@ -1,9 +1,11 @@
-package main
+package config
 
 import (
 	"errors"
 	"fmt"
 	"os"
+
+	"github.com/nhht77/earth-rest-api/server/pkg/logging"
 )
 
 type Config struct {
@@ -27,12 +29,12 @@ type FrameworkConfig struct {
 
 // Read and print Database connection
 
-func (c *Config) ReadDefault() {
+func (c *Config) ReadDefault(appConf Config, log logging.Logger) {
 
 	// @bugfix source test db if test build flag is true
-	if AppConfig.Framework.IsTestBuild || false {
-		AppConfig.Framework.IsTestBuild = true
-		Log.Infof("[postgre] Reading from test database %t", AppConfig.Framework.IsTestBuild)
+	if appConf.Framework.IsTestBuild || false {
+		appConf.Framework.IsTestBuild = true
+		log.Infof("[postgre] Reading from test database %t", appConf.Framework.IsTestBuild)
 		c.ReadTestDefault()
 		return
 	}
