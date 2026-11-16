@@ -220,6 +220,16 @@ Discussion outcome (keep for a future split — not part of current phases):
 - Mechanism/use-case split inside current code when extracting:
   `MonitorMiddleware`/`ListenAndServe` → pkg/mhttp-shaped mechanism;
   the `router.HandleFunc(...)` table → use-case.
+- ALSO modernize style to match AANM / operations-execution:
+  - HTTP: `go-chi/chi/v5` (ops-exec router; gorilla/mux already legacy there)
+    + shared `pkg/httpmiddleware`; consider OpenAPI-generated handler stubs
+    (ops-exec endpoints are generated from openapi.yaml)
+  - Database: interface-first — define `Datastorer`-style interface with
+    `ctx context.Context` on every method, typed returns; concrete
+    (mariadb/oracle-style) implementation behind it; handlers depend on the
+    interface → testable with mocks
+  - General: ctx propagation everywhere, runner-style lifecycle
+    (Closers/Runners in app.Context), pkg/ exports extension points
 
 ## Out of scope (for later plans)
 - Prometheus metrics hook (needs a metrics server in this app).
