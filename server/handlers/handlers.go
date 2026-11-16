@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"github.com/nhht77/earth-rest-api/server/database"

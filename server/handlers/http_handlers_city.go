@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"errors"
@@ -11,15 +11,15 @@ import (
 	"github.com/nhht77/earth-rest-api/server/pkg/muuid"
 )
 
-func (h *Handlers) HandleCountries(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) HandleCities(w http.ResponseWriter, r *http.Request) {
 
-	options, err := database.CountryOptionsFromQuery(r)
+	options, err := database.CityOptionsFromQuery(r)
 	if err != nil {
 		mhttp.WriteBadRequest(w, fmt.Sprintf("Invalid query: %s", err.Error()))
 		return
 	}
 
-	results, err := h.db.CountriesByOptions(options)
+	results, err := h.db.CitiesByOptions(options)
 	if err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
@@ -28,7 +28,7 @@ func (h *Handlers) HandleCountries(w http.ResponseWriter, r *http.Request) {
 	mhttp.WriteBodyJSON(w, results)
 }
 
-func (h *Handlers) HandleCountry(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) HandleCity(w http.ResponseWriter, r *http.Request) {
 
 	c_uuid := mhttp.Query(r, "uuid")
 	if _, err := muuid.UUIDFromString(c_uuid); err != nil {
@@ -36,7 +36,7 @@ func (h *Handlers) HandleCountry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.db.CountryByUuid(nil, c_uuid)
+	result, err := h.db.CityByUuid(nil, c_uuid)
 	if err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
@@ -45,21 +45,21 @@ func (h *Handlers) HandleCountry(w http.ResponseWriter, r *http.Request) {
 	mhttp.WriteBodyJSON(w, result)
 }
 
-func (h *Handlers) HandleCreateCountry(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) HandleCreateCity(w http.ResponseWriter, r *http.Request) {
 
-	country := &pkg_v1.Country{}
+	continent := &pkg_v1.City{}
 
-	if err := mhttp.ReadBodyJSON(r, &country); err != nil {
+	if err := mhttp.ReadBodyJSON(r, &continent); err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
 	}
 
-	if err := country.ValidateCreate(); err != nil {
+	if err := continent.ValidateCreate(); err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
 	}
 
-	result, err := h.db.CreateCountry(nil, country)
+	result, err := h.db.CreateCity(nil, continent)
 	if err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
@@ -68,9 +68,9 @@ func (h *Handlers) HandleCreateCountry(w http.ResponseWriter, r *http.Request) {
 	mhttp.WriteBodyJSON(w, result)
 }
 
-func (h *Handlers) HandleUpdateCountry(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) HandleUpdateCity(w http.ResponseWriter, r *http.Request) {
 
-	continent := &pkg_v1.Country{}
+	continent := &pkg_v1.City{}
 	if err := mhttp.ReadBodyJSON(r, &continent); err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
@@ -84,7 +84,7 @@ func (h *Handlers) HandleUpdateCountry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.db.UpdateCountry(nil, continent)
+	result, err := h.db.UpdateCity(nil, continent)
 	if err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return
@@ -93,7 +93,7 @@ func (h *Handlers) HandleUpdateCountry(w http.ResponseWriter, r *http.Request) {
 	mhttp.WriteBodyJSON(w, result)
 }
 
-func (h *Handlers) HandleDeleteCountry(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) HandleDeleteCity(w http.ResponseWriter, r *http.Request) {
 	var query_uuid = mhttp.Query(r, "uuid")
 
 	if _, err := muuid.UUIDFromString(query_uuid); err != nil {
@@ -101,7 +101,7 @@ func (h *Handlers) HandleDeleteCountry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.db.SoftDeleteCountry(nil, query_uuid); err != nil {
+	if err := h.db.SoftDeleteCity(nil, query_uuid); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

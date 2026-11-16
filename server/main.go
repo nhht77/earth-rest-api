@@ -5,6 +5,7 @@ import (
 
 	"github.com/nhht77/earth-rest-api/server/config"
 	"github.com/nhht77/earth-rest-api/server/database"
+	"github.com/nhht77/earth-rest-api/server/handlers"
 	"github.com/nhht77/earth-rest-api/server/pkg/logging"
 	"github.com/nhht77/earth-rest-api/server/pkg/mstring"
 )
@@ -39,7 +40,7 @@ func main() {
 		db.ClearTable()
 	}
 
-	if err := RunHTTP(appConf, NewHandlers(db, Log)); err != nil {
+	if err := handlers.RunHTTP(appConf, handlers.NewHandlers(db, Log)); err != nil {
 		release_resource()
 		Log.Fatalf("[mhttp] RunHTTP error %s", err.Error())
 		return
