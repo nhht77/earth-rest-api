@@ -45,7 +45,7 @@ minor logging things.** Revised order:
         app.Setup, app.Run)
       - `pkg/logging` context helpers already exist (NewContext/FromContext) —
         middleware can move with http_server.go later (Phase 4 folds into this)
-- [ ] **Phase 4 — request correlation** (folds into 3.5's `endpoints/` package:
+- [x] **Phase 4 — request correlation** (folds into 3.5's `endpoints/` package:
       request-ID middleware, FromContext in handlers, monitor line with
       duration+status)
 - [ ] **Phase 5 — error classification + stack trace polish** (DB errors → 500
