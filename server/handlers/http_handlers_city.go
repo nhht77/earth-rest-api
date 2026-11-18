@@ -21,7 +21,8 @@ func (h *Handlers) HandleCities(w http.ResponseWriter, r *http.Request) {
 
 	results, err := h.db.CitiesByOptions(options)
 	if err != nil {
-		mhttp.WriteBadRequest(w, err.Error())
+		h.requestLog(r).Errorf("[city] DB.CitiesByOptions error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 
@@ -38,7 +39,8 @@ func (h *Handlers) HandleCity(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.db.CityByUuid(nil, c_uuid)
 	if err != nil {
-		mhttp.WriteBadRequest(w, err.Error())
+		h.requestLog(r).Errorf("[city] DB.CityByUuid error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 
@@ -55,13 +57,16 @@ func (h *Handlers) HandleCreateCity(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := continent.ValidateCreate(); err != nil {
+		// caller's fault → 400 (validation is request correctness, not an outage)
 		mhttp.WriteBadRequest(w, err.Error())
 		return
 	}
 
 	result, err := h.db.CreateCity(nil, continent)
 	if err != nil {
-		mhttp.WriteBadRequest(w, err.Error())
+		// our fault → 500, logged
+		h.requestLog(r).Errorf("[city] DB.CreateCity error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 
@@ -86,7 +91,8 @@ func (h *Handlers) HandleUpdateCity(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.db.UpdateCity(nil, continent)
 	if err != nil {
-		mhttp.WriteBadRequest(w, err.Error())
+		h.requestLog(r).Errorf("[city] DB.UpdateCity error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 
@@ -102,7 +108,8 @@ func (h *Handlers) HandleDeleteCity(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.db.SoftDeleteCity(nil, query_uuid); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		h.requestLog(r).Errorf("[city] DB.SoftDeleteCity error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 

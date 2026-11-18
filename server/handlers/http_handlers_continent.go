@@ -21,7 +21,9 @@ func (h *Handlers) HandleContinents(w http.ResponseWriter, r *http.Request) {
 
 	results, err := h.db.ContinentsByOptions(options)
 	if err != nil {
-		mhttp.WriteBadRequest(w, err.Error())
+		// our fault → 500 (was wrongly 400: a DB failure is never the caller's fault)
+		h.requestLog(r).Errorf("[continent] DB.ContinentsByOptions error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 
@@ -38,7 +40,8 @@ func (h *Handlers) HandleContinent(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.db.ContinentByUuid(nil, c_uuid)
 	if err != nil {
-		mhttp.WriteBadRequest(w, err.Error())
+		h.requestLog(r).Errorf("[continent] DB.ContinentByUuid error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 
@@ -61,7 +64,8 @@ func (h *Handlers) HandleCreateContinent(w http.ResponseWriter, r *http.Request)
 
 	result, err := h.db.CreateContinent(nil, continent)
 	if err != nil {
-		mhttp.WriteBadRequest(w, err.Error())
+		h.requestLog(r).Errorf("[continent] DB.CreateContinent error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 
@@ -86,7 +90,8 @@ func (h *Handlers) HandleUpdateContinent(w http.ResponseWriter, r *http.Request)
 
 	result, err := h.db.UpdateContinent(nil, continent)
 	if err != nil {
-		mhttp.WriteBadRequest(w, err.Error())
+		h.requestLog(r).Errorf("[continent] DB.UpdateContinent error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 
@@ -102,7 +107,8 @@ func (h *Handlers) HandleDeleteContinent(w http.ResponseWriter, r *http.Request)
 	}
 
 	if err := h.db.SoftDeleteContinent(nil, query_uuid); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		h.requestLog(r).Errorf("[continent] DB.SoftDeleteContinent error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 

@@ -21,7 +21,8 @@ func (h *Handlers) HandleCountries(w http.ResponseWriter, r *http.Request) {
 
 	results, err := h.db.CountriesByOptions(options)
 	if err != nil {
-		mhttp.WriteBadRequest(w, err.Error())
+		h.requestLog(r).Errorf("[country] DB.CountriesByOptions error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 
@@ -38,7 +39,8 @@ func (h *Handlers) HandleCountry(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.db.CountryByUuid(nil, c_uuid)
 	if err != nil {
-		mhttp.WriteBadRequest(w, err.Error())
+		h.requestLog(r).Errorf("[country] DB.CountryByUuid error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 
@@ -61,7 +63,8 @@ func (h *Handlers) HandleCreateCountry(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.db.CreateCountry(nil, country)
 	if err != nil {
-		mhttp.WriteBadRequest(w, err.Error())
+		h.requestLog(r).Errorf("[country] DB.CreateCountry error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 
@@ -86,7 +89,8 @@ func (h *Handlers) HandleUpdateCountry(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.db.UpdateCountry(nil, continent)
 	if err != nil {
-		mhttp.WriteBadRequest(w, err.Error())
+		h.requestLog(r).Errorf("[country] DB.UpdateCountry error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 
@@ -102,7 +106,8 @@ func (h *Handlers) HandleDeleteCountry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.db.SoftDeleteCountry(nil, query_uuid); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		h.requestLog(r).Errorf("[country] DB.SoftDeleteCountry error: %s", err.Error())
+		mhttp.WriteInternalServerError(w, err.Error())
 		return
 	}
 
