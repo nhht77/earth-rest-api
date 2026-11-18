@@ -232,6 +232,12 @@ Discussion outcome (keep for a future split — not part of current phases):
     (Closers/Runners in app.Context), pkg/ exports extension points
 
 ## Out of scope (for later plans)
+- **IT (integration tests)**: a dedicated `server/integration_test/` package
+  with `//go:build integration` tag (operations-execution pattern) covering
+  the DB-backed handlers and `database/` query methods against `earth_test`.
+  `main_test.go`'s DB-backed `TestMain` setup is the seed for it — move it
+  there when doing this. Unit suites (`config`, `handlers`, `app`) stay
+  colocated and tag-free.
 - Prometheus metrics hook (needs a metrics server in this app).
 - Audit logging (no audit events in this app).
 - v2 context-first API (worth a follow-up plan — mirrors Neo v2 with
