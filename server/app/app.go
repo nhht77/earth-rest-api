@@ -2,12 +2,13 @@ package app
 
 import (
 	"flag"
+	"io"
+	"os"
 
 	"github.com/nhht77/earth-rest-api/server/config"
 	"github.com/nhht77/earth-rest-api/server/database"
 	"github.com/nhht77/earth-rest-api/server/handlers"
 	"github.com/nhht77/earth-rest-api/server/pkg/logging"
-	"github.com/nhht77/earth-rest-api/server/pkg/mstring"
 )
 
 type App struct {
@@ -28,7 +29,9 @@ func New(log logging.Logger) *App {
 }
 
 func (a *App) Setup() error {
-	a.initFramework() // your init_framework, method-ified: flags + Log.Info line
+	if err := a.Initialize(os.Args[1:]); err != nil {
+		return err
+	}
 	a.Conf.ReadDefault(*a.Conf, a.Log)
 	if err := a.DB.Initialize(a.Conf); err != nil {
 		return err
@@ -52,17 +55,23 @@ func (a *App) Close() {
 	a.DB.Close()
 }
 
-func (a *App) initFramework() {
+func (a *App) Initialize(args []string) error {
+	fs := flag.NewFlagSet("earth-rest-api", flag.ContinueOnError)
+	fs.SetOutput(io.Discard) // keep usage/parse errors out of test output
+
 	dataSource := &config.DataSource{}
-	flag.StringVar(&dataSource.DatabaseHost, "database-host", "localhost", "Database host")
-	flag.StringVar(&dataSource.DatabasePort, "database-port", "5432", "Database port")
+	fs.StringVar(&dataSource.DatabaseHost, "database-host", "localhost", "Database host")
+	fs.StringVar(&dataSource.DatabasePort, "database-port", "5432", "Database port")
 
 	frameworkConf := &config.FrameworkConfig{}
-	flag.BoolVar(&frameworkConf.IsTestBuild, "test-build", false, "run test environment and using test database")
-	flag.StringVar(&frameworkConf.ServerPort, "port", "8080", "server serves and listens at port")
-	flag.Parse()
+	fs.BoolVar(&frameworkConf.IsTestBuild, "test-build", false, "run test environment and using test database")
+	fs.StringVar(&frameworkConf.ServerPort, "port", "8080", "server serves and listens at port")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
 
 	a.Conf.DataSource = dataSource
 	a.Conf.Framework = frameworkConf
-	a.Log.Info("Framework Config: ", mstring.ToJSON(a.Conf))
+	return nil
 }
