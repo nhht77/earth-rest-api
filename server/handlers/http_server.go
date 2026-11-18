@@ -2,15 +2,18 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/nhht77/earth-rest-api/server/config"
 	"github.com/nhht77/earth-rest-api/server/pkg/logging"
 	"github.com/nhht77/earth-rest-api/server/pkg/mhttp"
+	"github.com/nhht77/earth-rest-api/server/pkg/muuid"
 )
 
 func RunHTTP(appConf *config.Config, h *Handlers) error {
 	router := mux.NewRouter().StrictSlash(true)
+	router.Use(RequestMiddleware(h.log))
 	router.Use(MonitorMiddleware(h.log))
 
 	router.HandleFunc("/api/v1/ping", Ping).Methods("GET")
@@ -41,11 +44,51 @@ func ListenAndServe(addr string, h *Handlers, handler http.Handler) error {
 	return http.ListenAndServe(addr, handler)
 }
 
+// statusWriter captures the response status code, which net/http does not expose.
+type statusWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (w *statusWriter) WriteHeader(status int) {
+	w.status = status
+	w.ResponseWriter.WriteHeader(status)
+}
+
+// MonitorMiddleware logs one line per request: method, path, status, duration.
+// The request-scoped logger from the context carries the request_id; it falls
+// back to the injected log when RequestMiddleware did not run (or tests).
 func MonitorMiddleware(log logging.Logger) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			log.Infof("[http] %s %s", r.Method, r.URL)
-			next.ServeHTTP(w, r)
+			requestLog := logging.FromContext(r.Context())
+			if requestLog == nil {
+				requestLog = log
+			}
+
+			started := time.Now()
+			sw := &statusWriter{ResponseWriter: w, status: http.StatusOK}
+
+			next.ServeHTTP(sw, r)
+
+			requestLog.Infof("[http] %s %s -> %d in %s",
+				r.Method, r.URL.Path, sw.status, time.Since(started))
+		})
+	}
+}
+
+func RequestMiddleware(log logging.Logger) mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requestID := muuid.NewUUID().String()
+			requestLog := log.With("request_id", requestID)
+
+			// expose the ID to clients for support/correlation
+			w.Header().Set("X-Request-ID", requestID)
+
+			next.ServeHTTP(w, r.WithContext(
+				logging.NewContext(r.Context(), requestLog),
+			))
 		})
 	}
 }
