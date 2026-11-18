@@ -31,8 +31,8 @@ func TestStructArrayCopyShallow(t *testing.T) {
 	original := [2]person{{name: "p1", friend: &alice}, {name: "p2"}}
 	copied := original
 
-	copied[0].name = "renamed"      // value field: copy is independent
-	*copied[0].friend = "mallory"   // pointer field: SHARED backing storage
+	copied[0].name = "renamed"    // value field: copy is independent
+	*copied[0].friend = "mallory" // pointer field: SHARED backing storage
 
 	if original[0].name != "p1" {
 		t.Errorf("name field leaked through copy: %q", original[0].name)

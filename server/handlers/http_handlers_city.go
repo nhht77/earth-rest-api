@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/nhht77/earth-rest-api/pkg/mhttp"
+	"github.com/nhht77/earth-rest-api/pkg/muuid"
+	pkg_v1 "github.com/nhht77/earth-rest-api/pkg/v1"
 	"github.com/nhht77/earth-rest-api/server/database"
-	pkg_v1 "github.com/nhht77/earth-rest-api/server/pkg"
-	"github.com/nhht77/earth-rest-api/server/pkg/mhttp"
-	"github.com/nhht77/earth-rest-api/server/pkg/muuid"
 )
 
 func (h *Handlers) HandleCities(w http.ResponseWriter, r *http.Request) {

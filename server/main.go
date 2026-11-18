@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/nhht77/earth-rest-api/pkg/logging"
 	"github.com/nhht77/earth-rest-api/server/app"
-	"github.com/nhht77/earth-rest-api/server/pkg/logging"
 )
 
 func main() {

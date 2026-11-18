@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	_ "github.com/lib/pq"
+	"github.com/nhht77/earth-rest-api/pkg/logging"
 	"github.com/nhht77/earth-rest-api/server/config"
-	"github.com/nhht77/earth-rest-api/server/pkg/logging"
 	"github.com/sirupsen/logrus"
 )
 

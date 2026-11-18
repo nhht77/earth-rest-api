@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nhht77/earth-rest-api/server/pkg/logging"
+	"github.com/nhht77/earth-rest-api/pkg/logging"
 )
 
 type Config struct {

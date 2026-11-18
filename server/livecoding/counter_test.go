@@ -37,7 +37,7 @@ type atomicCounter struct {
 	n int64
 }
 
-func (c *atomicCounter) inc()      { atomic.AddInt64(&c.n, 1) }
+func (c *atomicCounter) inc()       { atomic.AddInt64(&c.n, 1) }
 func (c *atomicCounter) get() int64 { return atomic.LoadInt64(&c.n) }
 
 // hammer runs `inc` from `goroutines` goroutines, `perG` times each,

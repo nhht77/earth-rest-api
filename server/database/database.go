@@ -8,10 +8,10 @@ import (
 
 	_ "github.com/lib/pq"
 
+	"github.com/nhht77/earth-rest-api/pkg/logging"
+	"github.com/nhht77/earth-rest-api/pkg/msql"
+	"github.com/nhht77/earth-rest-api/pkg/mstring"
 	"github.com/nhht77/earth-rest-api/server/config"
-	"github.com/nhht77/earth-rest-api/server/pkg/logging"
-	"github.com/nhht77/earth-rest-api/server/pkg/msql"
-	"github.com/nhht77/earth-rest-api/server/pkg/mstring"
 )
 
 type Database struct {

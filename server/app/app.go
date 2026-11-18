@@ -5,10 +5,10 @@ import (
 	"io"
 	"os"
 
+	"github.com/nhht77/earth-rest-api/pkg/logging"
 	"github.com/nhht77/earth-rest-api/server/config"
 	"github.com/nhht77/earth-rest-api/server/database"
 	"github.com/nhht77/earth-rest-api/server/handlers"
-	"github.com/nhht77/earth-rest-api/server/pkg/logging"
 )
 
 type App struct {

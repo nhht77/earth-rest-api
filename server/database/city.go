@@ -8,11 +8,11 @@ import (
 	"net/http"
 	"time"
 
-	pkg_v1 "github.com/nhht77/earth-rest-api/server/pkg"
-	"github.com/nhht77/earth-rest-api/server/pkg/mhttp"
-	"github.com/nhht77/earth-rest-api/server/pkg/msql"
-	"github.com/nhht77/earth-rest-api/server/pkg/mstring"
-	muuid "github.com/nhht77/earth-rest-api/server/pkg/muuid"
+	"github.com/nhht77/earth-rest-api/pkg/mhttp"
+	"github.com/nhht77/earth-rest-api/pkg/msql"
+	"github.com/nhht77/earth-rest-api/pkg/mstring"
+	muuid "github.com/nhht77/earth-rest-api/pkg/muuid"
+	pkg_v1 "github.com/nhht77/earth-rest-api/pkg/v1"
 )
 
 type CityQueryOptions struct {

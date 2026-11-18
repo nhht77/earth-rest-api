@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/nhht77/earth-rest-api/pkg/logging"
 	"github.com/nhht77/earth-rest-api/server/database"
-	"github.com/nhht77/earth-rest-api/server/pkg/logging"
 )
 
 type Handlers struct {

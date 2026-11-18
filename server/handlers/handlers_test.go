@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nhht77/earth-rest-api/pkg/logging"
 	"github.com/nhht77/earth-rest-api/server/handlers"
-	"github.com/nhht77/earth-rest-api/server/pkg/logging"
 	"github.com/sirupsen/logrus"
 )
 

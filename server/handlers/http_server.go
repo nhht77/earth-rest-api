@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/nhht77/earth-rest-api/pkg/logging"
+	"github.com/nhht77/earth-rest-api/pkg/mhttp"
+	"github.com/nhht77/earth-rest-api/pkg/muuid"
 	"github.com/nhht77/earth-rest-api/server/config"
-	"github.com/nhht77/earth-rest-api/server/pkg/logging"
-	"github.com/nhht77/earth-rest-api/server/pkg/mhttp"
-	"github.com/nhht77/earth-rest-api/server/pkg/muuid"
 )
 
 func RunHTTP(appConf *config.Config, h *Handlers) error {
