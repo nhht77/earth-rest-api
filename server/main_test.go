@@ -26,6 +26,13 @@ func TestMain(m *testing.M) {
 
 	AppConfig.ReadTestDefault()
 
+	// DataSource comes from flags in production; the test harness fixes it here
+	// (same values the makefile uses: local postgres on 5433).
+	AppConfig.DataSource = &config.DataSource{
+		DatabaseHost: "localhost",
+		DatabasePort: "5433",
+	}
+
 	err := DB.Initialize(AppConfig)
 	if err != nil {
 		Log.Fatalf("[test] DB.Initialize error %s", err)

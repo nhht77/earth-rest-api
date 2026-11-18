@@ -53,13 +53,16 @@ func (a *App) Close() {
 }
 
 func (a *App) initFramework() {
+	dataSource := &config.DataSource{}
+	flag.StringVar(&dataSource.DatabaseHost, "database-host", "localhost", "Database host")
+	flag.StringVar(&dataSource.DatabasePort, "database-port", "5432", "Database port")
+
 	frameworkConf := &config.FrameworkConfig{}
 	flag.BoolVar(&frameworkConf.IsTestBuild, "test-build", false, "run test environment and using test database")
 	flag.StringVar(&frameworkConf.ServerPort, "port", "8080", "server serves and listens at port")
-	flag.StringVar(&frameworkConf.DatabasePort, "database-port", "5432", "Database port")
-	flag.StringVar(&frameworkConf.DatabaseHost, "database-host", "localhost", "Database host")
 	flag.Parse()
 
+	a.Conf.DataSource = dataSource
 	a.Conf.Framework = frameworkConf
-	a.Log.Info("Framework Config: ", mstring.ToJSON(a.Conf.Framework))
+	a.Log.Info("Framework Config: ", mstring.ToJSON(a.Conf))
 }

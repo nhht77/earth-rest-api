@@ -9,22 +9,27 @@ import (
 )
 
 type Config struct {
-	Database  DatabaseConfig   `json:"database"`
-	Framework *FrameworkConfig `json:"framework"`
+	Credentials Credential       `json:"credentials"` // was: Database DatabaseConfig
+	DataSource  *DataSource      `json:"data_source"` // where to connect — nil means "not initialized yet"
+	Framework   *FrameworkConfig `json:"framework"`   // server/runtime settings
 }
 
-type DatabaseConfig struct {
+// Credential is the identity for the database connection.
+type Credential struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Database string `json:"database"`
 }
 
+// DataSource is where to connect.
+type DataSource struct {
+	DatabaseHost string `json:"database_host"` // default "localhost"
+	DatabasePort string `json:"database_port"` // default "5432"
+}
+
 type FrameworkConfig struct {
 	ServerPort  string `json:"server_port"`   // default "8080"
 	IsTestBuild bool   `json:"is_test_build"` // default false
-
-	DatabaseHost string `json:"database_host"` // default "localhost"
-	DatabasePort string `json:"database_port"` // default "5432"
 }
 
 // Read and print Database connection
@@ -39,59 +44,78 @@ func (c *Config) ReadDefault(appConf Config, log logging.Logger) {
 		return
 	}
 
-	if len(c.Database.Database) == 0 {
-		c.Database.Database = os.Getenv("APP_DATABASE")
+	if len(c.Credentials.Database) == 0 {
+		c.Credentials.Database = os.Getenv("APP_DATABASE")
 	}
-	if len(c.Database.Username) == 0 {
-		c.Database.Username = os.Getenv("APP_USERNAME")
+	if len(c.Credentials.Username) == 0 {
+		c.Credentials.Username = os.Getenv("APP_USERNAME")
 	}
-	if len(c.Database.Password) == 0 {
-		c.Database.Password = os.Getenv("APP_PASSWORD")
+	if len(c.Credentials.Password) == 0 {
+		c.Credentials.Password = os.Getenv("APP_PASSWORD")
 	}
 }
 
 func (c *Config) ReadTestDefault() {
-	if len(c.Database.Database) == 0 {
-		c.Database.Database = os.Getenv("TEST_DATABASE")
+	if len(c.Credentials.Database) == 0 {
+		c.Credentials.Database = os.Getenv("TEST_DATABASE")
 	}
-	if len(c.Database.Username) == 0 {
-		c.Database.Username = os.Getenv("TEST_USERNAME")
+	if len(c.Credentials.Username) == 0 {
+		c.Credentials.Username = os.Getenv("TEST_USERNAME")
 	}
-	if len(c.Database.Password) == 0 {
-		c.Database.Password = os.Getenv("TEST_PASSWORD")
+	if len(c.Credentials.Password) == 0 {
+		c.Credentials.Password = os.Getenv("TEST_PASSWORD")
 	}
 }
 
-func (c *Config) ValidateConfig() error {
-	if len(c.Database.Database) == 0 {
-		return errors.New("Config.Database")
+func (c *Config) ValidateDataSource() error {
+	if c.DataSource == nil {
+		return errors.New("Config.DataSource is nil")
 	}
-	if len(c.Database.Username) == 0 {
-		return errors.New("Config.Username")
+	if len(c.DataSource.DatabaseHost) == 0 {
+		return errors.New("Config.DataSource.DatabaseHost")
 	}
-	if len(c.Database.Password) == 0 {
-		return errors.New("Config.Database.Password")
+	if len(c.DataSource.DatabasePort) == 0 {
+		return errors.New("Config.DataSource.DatabasePort")
 	}
 	return nil
 }
 
-func (c *Config) DatabaseSource(host string, port string) string {
+func (c *Config) ValidateConfig() error {
+	if len(c.Credentials.Database) == 0 {
+		return errors.New("Config.Credentials.Database")
+	}
+	if len(c.Credentials.Username) == 0 {
+		return errors.New("Config.Credentials.Username")
+	}
+	if len(c.Credentials.Password) == 0 {
+		return errors.New("Config.Credentials.Password")
+	}
+	return nil
+}
+
+func (c *Config) DatabaseSource() string {
+	if c.DataSource == nil {
+		return ""
+	}
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host,
-		port,
-		c.Database.Username,
-		c.Database.Password,
-		c.Database.Database,
+		c.DataSource.DatabaseHost,
+		c.DataSource.DatabasePort,
+		c.Credentials.Username,
+		c.Credentials.Password,
+		c.Credentials.Database,
 	)
 }
 
-func (c *Config) DatabaseSourcePrintable(host string, port string) string {
+func (c *Config) DatabaseSourcePrintable() string {
+	if c.DataSource == nil {
+		return ""
+	}
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host,
-		port,
-		c.Database.Username[0:3]+"...",
+		c.DataSource.DatabaseHost,
+		c.DataSource.DatabasePort,
+		c.Credentials.Username[0:3]+"...",
 		"****",
-		c.Database.Database[0:3]+"...",
+		c.Credentials.Database[0:3]+"...",
 	)
 }
 
@@ -99,16 +123,16 @@ func (c *Config) Printable() *Config {
 
 	temp := *c
 
-	if l := len(c.Database.Database); l > 0 {
-		temp.Database.Database = c.Database.Database[0:int(l/3)] + "..."
+	if l := len(c.Credentials.Database); l > 0 {
+		temp.Credentials.Database = c.Credentials.Database[0:int(l/3)] + "..."
 	}
 
-	if l := len(c.Database.Username); l > 0 {
-		temp.Database.Username = c.Database.Username[0:int(l/3)] + "..."
+	if l := len(c.Credentials.Username); l > 0 {
+		temp.Credentials.Username = c.Credentials.Username[0:int(l/3)] + "..."
 	}
 
-	if len(c.Database.Password) > 0 {
-		temp.Database.Password = "****"
+	if len(c.Credentials.Password) > 0 {
+		temp.Credentials.Password = "****"
 	}
 
 	return &temp

@@ -29,20 +29,19 @@ func (db *Database) Initialize(c *config.Config) error {
 		return err
 	}
 
+	if err := c.ValidateDataSource(); err != nil {
+		return err
+	}
+
 	db.Log.Infof(
 		"[postgre] Database Source: %s",
-		c.DatabaseSourcePrintable(
-			c.Framework.DatabaseHost,
-			c.Framework.DatabasePort,
-		),
+		c.DatabaseSourcePrintable(),
 	)
 
 	result, err := sql.Open(
 		"postgres",
-		c.DatabaseSource(
-			c.Framework.DatabaseHost,
-			c.Framework.DatabasePort,
-		))
+		c.DatabaseSource(),
+	)
 	if err != nil {
 		return err
 	}
