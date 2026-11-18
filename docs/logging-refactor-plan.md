@@ -33,7 +33,7 @@ Preference: **modularize `database/` and `http_server.go` before polishing
 minor logging things.** Revised order:
 
 - [x] ~~Phase 3 — Inject the logger (remove the global)~~ done 15.11.2026
-- [ ] **Phase 3.5 — Modularize (PREFERRED NEXT)**
+- [x] **Phase 3.5 — Modularize (PREFERRED NEXT)** done 18.11.2026
       - `database/` package: `database.go` + `database_{city,country,continent}.go`
         + `Config` DB wiring → own package with constructor (`NewDatabase(log)`)
       - `endpoints/` (or `http/`) package: `http_server.go` + `http_handlers_*.go`

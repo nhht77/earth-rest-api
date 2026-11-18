@@ -108,7 +108,7 @@ func (c *Config) Printable() *Config {
 	}
 
 	if len(c.Database.Password) > 0 {
-		c.Database.Password = "****"
+		temp.Database.Password = "****"
 	}
 
 	return &temp
