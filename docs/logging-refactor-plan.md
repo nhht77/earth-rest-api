@@ -48,7 +48,7 @@ minor logging things.** Revised order:
 - [x] **Phase 4 — request correlation** (folds into 3.5's `endpoints/` package:
       request-ID middleware, FromContext in handlers, monitor line with
       duration+status)
-- [ ] **Phase 5 — error classification + stack trace polish** (DB errors → 500
+- [x] **Phase 5 — error classification + stack trace polish** (DB errors → 500
       in handlers; `exit` var already in place for Fatal)
 
 Rationale: modularizing now (while components are freshly injected) is the
