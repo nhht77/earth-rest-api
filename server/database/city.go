@@ -8,11 +8,13 @@ import (
 	"net/http"
 	"time"
 
+	city "github.com/nhht77/earth-rest-api/pkg/city"
+	continent "github.com/nhht77/earth-rest-api/pkg/continent"
+	country "github.com/nhht77/earth-rest-api/pkg/country"
 	"github.com/nhht77/earth-rest-api/pkg/mhttp"
 	"github.com/nhht77/earth-rest-api/pkg/msql"
 	"github.com/nhht77/earth-rest-api/pkg/mstring"
 	muuid "github.com/nhht77/earth-rest-api/pkg/muuid"
-	pkg_v1 "github.com/nhht77/earth-rest-api/pkg/v1"
 )
 
 type CityQueryOptions struct {
@@ -42,34 +44,34 @@ func CityOptionsFromQuery(r *http.Request) (CityQueryOptions, error) {
 	}
 	if len(continent_types) > 0 {
 		for _, v := range continent_types {
-			options.ContinentTypes = append(options.ContinentTypes, pkg_v1.ContinentType(v))
+			options.ContinentTypes = append(options.ContinentTypes, continent.ContinentType(v))
 		}
 	}
 
 	return options, nil
 }
 
-func (db *Database) CitiesByOptions(options CityQueryOptions) ([]*pkg_v1.City, error) {
+func (db *Database) CitiesByOptions(options CityQueryOptions) ([]*city.City, error) {
 
 	var (
 		err     error
 		started = time.Now()
-		results = []*pkg_v1.City{}
+		results = []*city.City{}
 	)
 
 	if len(options.ContinentTypes) == 0 {
 		options.ContinentTypes = append(options.ContinentTypes,
-			pkg_v1.ContinentType_Asia,
-			pkg_v1.ContinentType_Africa,
-			pkg_v1.ContinentType_Europe,
-			pkg_v1.ContinentType_North_America,
-			pkg_v1.ContinentType_South_America,
-			pkg_v1.ContinentType_Oceania,
-			pkg_v1.ContinentType_Antarctica,
+			continent.ContinentType_Asia,
+			continent.ContinentType_Africa,
+			continent.ContinentType_Europe,
+			continent.ContinentType_North_America,
+			continent.ContinentType_South_America,
+			continent.ContinentType_Oceania,
+			continent.ContinentType_Antarctica,
 		)
 	}
 
-	query := fmt.Sprintf(`SELECT %s FROM city `, new(pkg_v1.City).DatabaseFields())
+	query := fmt.Sprintf(`SELECT %s FROM city `, new(city.City).DatabaseFields())
 
 	if !options.Deleted {
 		query += fmt.Sprintf(`WHERE deleted_state != %d`, msql.SoftDeleted)
@@ -91,7 +93,7 @@ func (db *Database) CitiesByOptions(options CityQueryOptions) ([]*pkg_v1.City, e
 
 	for rows.Next() {
 		var (
-			curr    = &pkg_v1.City{}
+			curr    = &city.City{}
 			updated sql.NullTime
 		)
 		if err = rows.Scan(
@@ -132,7 +134,7 @@ func (db *Database) CitiesByOptions(options CityQueryOptions) ([]*pkg_v1.City, e
 	return filter_results, nil
 }
 
-func (db *Database) ToCities(started time.Time, cities pkg_v1.CityList, options CityQueryOptions) (pkg_v1.CityList, error) {
+func (db *Database) ToCities(started time.Time, cities city.CityList, options CityQueryOptions) (city.CityList, error) {
 	if started.IsZero() {
 		started = time.Now()
 	}
@@ -142,7 +144,7 @@ func (db *Database) ToCities(started time.Time, cities pkg_v1.CityList, options 
 	})
 	db.CheckOperation("ToCities ", err, started)
 	if err != nil {
-		return pkg_v1.CityList{}, err
+		return city.CityList{}, err
 	}
 
 	countries, err := db.CountriesByOptions(CountryQueryOptions{
@@ -150,13 +152,13 @@ func (db *Database) ToCities(started time.Time, cities pkg_v1.CityList, options 
 	})
 	db.CheckOperation("ToCities ", err, started)
 	if err != nil {
-		return pkg_v1.CityList{}, err
+		return city.CityList{}, err
 	}
 
 	var (
-		continent_map = map[msql.DatabaseIndex]*pkg_v1.Continent{}
-		country_map   = map[msql.DatabaseIndex]*pkg_v1.Country{}
-		filter_cities = pkg_v1.CityList{}
+		continent_map = map[msql.DatabaseIndex]*continent.Continent{}
+		country_map   = map[msql.DatabaseIndex]*country.Country{}
+		filter_cities = city.CityList{}
 	)
 
 	// create continents map
@@ -203,13 +205,13 @@ func (db *Database) ToCities(started time.Time, cities pkg_v1.CityList, options 
 	return filter_cities, nil
 }
 
-func (db *Database) CityByUuid(tx *sql.Tx, uuid string) (*pkg_v1.City, error) {
+func (db *Database) CityByUuid(tx *sql.Tx, uuid string) (*city.City, error) {
 	if _, err := muuid.UUIDFromString(uuid); err != nil {
 		return nil, err
 	}
 
 	var (
-		result  = &pkg_v1.City{}
+		result  = &city.City{}
 		started = time.Now()
 
 		updated sql.NullTime
@@ -262,7 +264,7 @@ func (db *Database) CityByUuid(tx *sql.Tx, uuid string) (*pkg_v1.City, error) {
 }
 
 // Note: Country can have only one capital
-func (db *Database) IsCapitalExist(tx *sql.Tx, city *pkg_v1.City, country *pkg_v1.Country) (exist bool, err error) {
+func (db *Database) IsCapitalExist(tx *sql.Tx, city *city.City, country *country.Country) (exist bool, err error) {
 
 	if city.Details != nil && !city.Details.IsCapital {
 		return false, nil
@@ -286,7 +288,7 @@ func (db *Database) IsCapitalExist(tx *sql.Tx, city *pkg_v1.City, country *pkg_v
 	return exist, nil
 }
 
-func (db *Database) CreateCity(tx *sql.Tx, city *pkg_v1.City) (*pkg_v1.City, error) {
+func (db *Database) CreateCity(tx *sql.Tx, city *city.City) (*city.City, error) {
 	if err := city.ValidateCreate(); err != nil {
 		return nil, err
 	}
@@ -349,7 +351,7 @@ func (db *Database) CreateCity(tx *sql.Tx, city *pkg_v1.City) (*pkg_v1.City, err
 	return db.CityByUuid(tx, uuid.String())
 }
 
-func (db *Database) UpdateCity(tx *sql.Tx, city *pkg_v1.City) (*pkg_v1.City, error) {
+func (db *Database) UpdateCity(tx *sql.Tx, city *city.City) (*city.City, error) {
 
 	if !muuid.UUIDValid(city.Uuid) {
 		return nil, errors.New("Invalid uuid")

@@ -186,7 +186,8 @@ Today it has one deployable, so full pkg/svc is overkill. The honest layout:
 ```
 earth-rest-api/
 ├── pkg/       ← shared: logging, mhttp, msql, muuid (moved from server/pkg 18.11.2026)
-│   └── v1/    ← wire-format models City/Country/Continent (imported as pkg_v1)
+│   ├── city/ country/ continent/  ← wire models, one package per domain
+│   └── user/  ← shared UserMinimal (extracted from continent)
 └── server/    ← the one deployable
 ```
 

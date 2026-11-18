@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
+	city "github.com/nhht77/earth-rest-api/pkg/city"
 	"github.com/nhht77/earth-rest-api/pkg/mhttp"
 	"github.com/nhht77/earth-rest-api/pkg/muuid"
-	pkg_v1 "github.com/nhht77/earth-rest-api/pkg/v1"
 	"github.com/nhht77/earth-rest-api/server/database"
 )
 
@@ -49,7 +49,7 @@ func (h *Handlers) HandleCity(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) HandleCreateCity(w http.ResponseWriter, r *http.Request) {
 
-	continent := &pkg_v1.City{}
+	continent := &city.City{}
 
 	if err := mhttp.ReadBodyJSON(r, &continent); err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
@@ -75,7 +75,7 @@ func (h *Handlers) HandleCreateCity(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) HandleUpdateCity(w http.ResponseWriter, r *http.Request) {
 
-	continent := &pkg_v1.City{}
+	continent := &city.City{}
 	if err := mhttp.ReadBodyJSON(r, &continent); err != nil {
 		mhttp.WriteBadRequest(w, err.Error())
 		return

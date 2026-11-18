@@ -1,12 +1,14 @@
-package pkg_v1
+package country
 
 import (
 	"database/sql/driver"
 	"errors"
 	"time"
 
+	"github.com/nhht77/earth-rest-api/pkg/continent"
 	"github.com/nhht77/earth-rest-api/pkg/msql"
 	muuid "github.com/nhht77/earth-rest-api/pkg/muuid"
+	"github.com/nhht77/earth-rest-api/pkg/user"
 )
 
 type Country struct {
@@ -22,7 +24,7 @@ type Country struct {
 	Created time.Time `json:"created"`
 	Updated time.Time `json:"updated"`
 
-	Creator *UserMinimal `json:"creator"`
+	Creator *user.UserMinimal `json:"creator"`
 
 	DeletedState msql.DeletedState `json:"-"`
 }
@@ -32,7 +34,7 @@ type CountryDetails struct {
 	ISOCode   string `json:"iso_code"`
 	Currency  string `json:"currency"`
 
-	Continent *Continent `json:"continent,omitempty"`
+	Continent *continent.Continent `json:"continent,omitempty"`
 }
 
 func (v *CountryDetails) Value() (driver.Value, error) {

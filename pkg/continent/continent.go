@@ -1,43 +1,13 @@
-package pkg_v1
+package continent
 
 import (
-	"database/sql/driver"
 	"errors"
 	"time"
 
 	"github.com/nhht77/earth-rest-api/pkg/msql"
 	muuid "github.com/nhht77/earth-rest-api/pkg/muuid"
+	"github.com/nhht77/earth-rest-api/pkg/user"
 )
-
-type UserMinimal struct {
-	Email string `json:"email"`
-	Name  string `json:"name"`
-}
-
-func (user *UserMinimal) IsValid() error {
-	if user == nil {
-		return errors.New("Invalid user")
-	}
-
-	if len(user.Email) == 0 {
-		return errors.New("Invalid email")
-	}
-	if len(user.Name) == 0 {
-		return errors.New("Invalid name")
-	}
-	return nil
-}
-
-func (v *UserMinimal) Value() (driver.Value, error) {
-	return msql.JSONValue(v)
-}
-
-func (v *UserMinimal) Scan(src interface{}) error {
-	if src != nil && v == nil {
-		v = &UserMinimal{}
-	}
-	return msql.JSONScan(src, v)
-}
 
 ////////////////////////
 /////// Continent struct
@@ -66,7 +36,7 @@ type Continent struct {
 	Created time.Time `json:"created"`
 	Updated time.Time `json:"updated"`
 
-	Creator *UserMinimal `json:"creator"`
+	Creator *user.UserMinimal `json:"creator"`
 
 	DeletedState msql.DeletedState `json:"-"`
 }

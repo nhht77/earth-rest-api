@@ -8,11 +8,12 @@ import (
 	"net/http"
 	"time"
 
+	continent "github.com/nhht77/earth-rest-api/pkg/continent"
+	country "github.com/nhht77/earth-rest-api/pkg/country"
 	"github.com/nhht77/earth-rest-api/pkg/mhttp"
 	"github.com/nhht77/earth-rest-api/pkg/msql"
 	"github.com/nhht77/earth-rest-api/pkg/mstring"
 	muuid "github.com/nhht77/earth-rest-api/pkg/muuid"
-	pkg_v1 "github.com/nhht77/earth-rest-api/pkg/v1"
 )
 
 type CountryQueryOptions struct {
@@ -40,31 +41,31 @@ func CountryOptionsFromQuery(r *http.Request) (CountryQueryOptions, error) {
 	}
 	if len(continent_types) > 0 {
 		for _, v := range continent_types {
-			options.ContinentTypes = append(options.ContinentTypes, pkg_v1.ContinentType(v))
+			options.ContinentTypes = append(options.ContinentTypes, continent.ContinentType(v))
 		}
 	}
 
 	return options, nil
 }
 
-func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.CountryList, error) {
+func (db *Database) CountriesByOptions(options CountryQueryOptions) (country.CountryList, error) {
 
 	var (
 		err     error
 		started = time.Now()
-		results = pkg_v1.CountryList{}
-		fields  = new(pkg_v1.Country).DatabaseFields()
+		results = country.CountryList{}
+		fields  = new(country.Country).DatabaseFields()
 	)
 
 	if len(options.ContinentTypes) == 0 {
 		options.ContinentTypes = append(options.ContinentTypes,
-			pkg_v1.ContinentType_Asia,
-			pkg_v1.ContinentType_Africa,
-			pkg_v1.ContinentType_Europe,
-			pkg_v1.ContinentType_North_America,
-			pkg_v1.ContinentType_South_America,
-			pkg_v1.ContinentType_Oceania,
-			pkg_v1.ContinentType_Antarctica,
+			continent.ContinentType_Asia,
+			continent.ContinentType_Africa,
+			continent.ContinentType_Europe,
+			continent.ContinentType_North_America,
+			continent.ContinentType_South_America,
+			continent.ContinentType_Oceania,
+			continent.ContinentType_Antarctica,
 		)
 	}
 
@@ -93,7 +94,7 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.Coun
 
 	for rows.Next() {
 		var (
-			curr    = &pkg_v1.Country{}
+			curr    = &country.Country{}
 			updated sql.NullTime
 		)
 		if err = rows.Scan(
@@ -133,7 +134,7 @@ func (db *Database) CountriesByOptions(options CountryQueryOptions) (pkg_v1.Coun
 	return filters, nil
 }
 
-func ToCountries(db *Database, started time.Time, countries pkg_v1.CountryList, options CountryQueryOptions) (pkg_v1.CountryList, error) {
+func ToCountries(db *Database, started time.Time, countries country.CountryList, options CountryQueryOptions) (country.CountryList, error) {
 
 	if started.IsZero() {
 		started = time.Now()
@@ -142,12 +143,12 @@ func ToCountries(db *Database, started time.Time, countries pkg_v1.CountryList, 
 	continents, err := db.ContinentsByOptions(ContinentQueryOptions{Types: options.ContinentTypes})
 	db.CheckOperation("ToCountries ", err, started)
 	if err != nil {
-		return pkg_v1.CountryList{}, err
+		return country.CountryList{}, err
 	}
 
 	var (
-		continent_map    = map[msql.DatabaseIndex]*pkg_v1.Continent{}
-		filter_countries = pkg_v1.CountryList{}
+		continent_map    = map[msql.DatabaseIndex]*continent.Continent{}
+		filter_countries = country.CountryList{}
 	)
 
 	// create continents map
@@ -180,13 +181,13 @@ func ToCountries(db *Database, started time.Time, countries pkg_v1.CountryList, 
 	return filter_countries, nil
 }
 
-func (db *Database) CountryByUuid(tx *sql.Tx, uuid string) (*pkg_v1.Country, error) {
+func (db *Database) CountryByUuid(tx *sql.Tx, uuid string) (*country.Country, error) {
 	if _, err := muuid.UUIDFromString(uuid); err != nil {
 		return nil, err
 	}
 
 	var (
-		result  = &pkg_v1.Country{}
+		result  = &country.Country{}
 		started = time.Now()
 
 		updated sql.NullTime
@@ -233,7 +234,7 @@ func (db *Database) CountryByUuid(tx *sql.Tx, uuid string) (*pkg_v1.Country, err
 	return result, nil
 }
 
-func (db *Database) IsCountryExist(tx *sql.Tx, country *pkg_v1.Country) (exist bool, err error) {
+func (db *Database) IsCountryExist(tx *sql.Tx, country *country.Country) (exist bool, err error) {
 
 	var query = fmt.Sprintf(
 		`SELECT uuid FROM country
@@ -255,7 +256,7 @@ func (db *Database) IsCountryExist(tx *sql.Tx, country *pkg_v1.Country) (exist b
 	return exist, nil
 }
 
-func (db *Database) CreateCountry(tx *sql.Tx, country *pkg_v1.Country) (*pkg_v1.Country, error) {
+func (db *Database) CreateCountry(tx *sql.Tx, country *country.Country) (*country.Country, error) {
 	if err := country.ValidateCreate(); err != nil {
 		return nil, err
 	}
@@ -312,7 +313,7 @@ func (db *Database) CreateCountry(tx *sql.Tx, country *pkg_v1.Country) (*pkg_v1.
 	return db.CountryByUuid(tx, uuid.String())
 }
 
-func (db *Database) UpdateCountry(tx *sql.Tx, country *pkg_v1.Country) (*pkg_v1.Country, error) {
+func (db *Database) UpdateCountry(tx *sql.Tx, country *country.Country) (*country.Country, error) {
 
 	if !muuid.UUIDValid(country.Uuid) {
 		return nil, errors.New("Invalid uuid")

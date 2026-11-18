@@ -1,12 +1,15 @@
-package pkg_v1
+package city
 
 import (
 	"database/sql/driver"
 	"errors"
 	"time"
 
+	"github.com/nhht77/earth-rest-api/pkg/continent"
+	"github.com/nhht77/earth-rest-api/pkg/country"
 	"github.com/nhht77/earth-rest-api/pkg/msql"
 	muuid "github.com/nhht77/earth-rest-api/pkg/muuid"
+	"github.com/nhht77/earth-rest-api/pkg/user"
 )
 
 type City struct {
@@ -24,7 +27,7 @@ type City struct {
 	Created time.Time `json:"created"`
 	Updated time.Time `json:"updated"`
 
-	Creator *UserMinimal `json:"creator"`
+	Creator *user.UserMinimal `json:"creator"`
 
 	DeletedState msql.DeletedState `json:"-"`
 }
@@ -32,8 +35,8 @@ type City struct {
 type CityDetails struct {
 	IsCapital bool `json:"is_capital"`
 
-	Continent *Continent `json:"continent,omitempty"`
-	Country   *Country   `json:"country,omitempty"`
+	Continent *continent.Continent `json:"continent,omitempty"`
+	Country   *country.Country     `json:"country,omitempty"`
 }
 
 func (v *CityDetails) Value() (driver.Value, error) {

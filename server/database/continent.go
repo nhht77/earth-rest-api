@@ -9,14 +9,14 @@ import (
 	"strconv"
 	"time"
 
+	continent "github.com/nhht77/earth-rest-api/pkg/continent"
 	"github.com/nhht77/earth-rest-api/pkg/mhttp"
 	"github.com/nhht77/earth-rest-api/pkg/msql"
 	"github.com/nhht77/earth-rest-api/pkg/mstring"
 	muuid "github.com/nhht77/earth-rest-api/pkg/muuid"
-	pkg_v1 "github.com/nhht77/earth-rest-api/pkg/v1"
 )
 
-type ContinentTypeList []pkg_v1.ContinentType
+type ContinentTypeList []continent.ContinentType
 
 func (types ContinentTypeList) String() (str string) {
 	for _, iter := range types {
@@ -28,7 +28,7 @@ func (types ContinentTypeList) String() (str string) {
 	return str
 }
 
-func (types ContinentTypeList) Contains(value pkg_v1.ContinentType) bool {
+func (types ContinentTypeList) Contains(value continent.ContinentType) bool {
 	for _, iter := range types {
 		if value == iter {
 			return true
@@ -59,31 +59,31 @@ func ContinentOptionsFromQuery(r *http.Request) (ContinentQueryOptions, error) {
 	}
 	if len(types) > 0 {
 		for _, v := range types {
-			options.Types = append(options.Types, pkg_v1.ContinentType(v))
+			options.Types = append(options.Types, continent.ContinentType(v))
 		}
 	}
 	return options, nil
 }
 
-func (db *Database) ContinentsByOptions(options ContinentQueryOptions) ([]*pkg_v1.Continent, error) {
+func (db *Database) ContinentsByOptions(options ContinentQueryOptions) ([]*continent.Continent, error) {
 	started := time.Now()
 
 	if len(options.Types) == 0 {
 		options.Types = append(options.Types,
-			pkg_v1.ContinentType_Asia,
-			pkg_v1.ContinentType_Africa,
-			pkg_v1.ContinentType_Europe,
-			pkg_v1.ContinentType_North_America,
-			pkg_v1.ContinentType_South_America,
-			pkg_v1.ContinentType_Oceania,
-			pkg_v1.ContinentType_Antarctica,
+			continent.ContinentType_Asia,
+			continent.ContinentType_Africa,
+			continent.ContinentType_Europe,
+			continent.ContinentType_North_America,
+			continent.ContinentType_South_America,
+			continent.ContinentType_Oceania,
+			continent.ContinentType_Antarctica,
 		)
 	}
 
 	var (
 		err     error
-		results = []*pkg_v1.Continent{}
-		fields  = new(pkg_v1.Continent).DatabaseFields()
+		results = []*continent.Continent{}
+		fields  = new(continent.Continent).DatabaseFields()
 	)
 
 	query := fmt.Sprintf(
@@ -108,7 +108,7 @@ func (db *Database) ContinentsByOptions(options ContinentQueryOptions) ([]*pkg_v
 
 	for rows.Next() {
 		var (
-			curr    = &pkg_v1.Continent{}
+			curr    = &continent.Continent{}
 			updated sql.NullTime
 		)
 		if err = rows.Scan(
@@ -151,13 +151,13 @@ func (db *Database) ContinentsByOptions(options ContinentQueryOptions) ([]*pkg_v
 	return results, nil
 }
 
-func (db *Database) ContinentByUuid(tx *sql.Tx, uuid string) (*pkg_v1.Continent, error) {
+func (db *Database) ContinentByUuid(tx *sql.Tx, uuid string) (*continent.Continent, error) {
 	if _, err := muuid.UUIDFromString(uuid); err != nil {
 		return nil, err
 	}
 
 	var (
-		result  = &pkg_v1.Continent{}
+		result  = &continent.Continent{}
 		started = time.Now()
 
 		updated sql.NullTime
@@ -298,13 +298,13 @@ func (db *Database) ContinentIndexByUuid(tx *sql.Tx, uuid muuid.UUID) (msql.Data
 	return index, nil
 }
 
-func (db *Database) ContinentUuidsByIndex(tx *sql.Tx, indexes msql.DatabaseIndexList) (*pkg_v1.Continent, error) {
+func (db *Database) ContinentUuidsByIndex(tx *sql.Tx, indexes msql.DatabaseIndexList) (*continent.Continent, error) {
 	if len(indexes) == 0 {
 		return nil, errors.New("Invalid index")
 	}
 
 	var (
-		result  = &pkg_v1.Continent{}
+		result  = &continent.Continent{}
 		started = time.Now()
 	)
 
@@ -333,7 +333,7 @@ func (db *Database) ContinentUuidsByIndex(tx *sql.Tx, indexes msql.DatabaseIndex
 	return result, nil
 }
 
-func (db *Database) IsContinentTypeExist(tx *sql.Tx, continent *pkg_v1.Continent) (exist bool, err error) {
+func (db *Database) IsContinentTypeExist(tx *sql.Tx, continent *continent.Continent) (exist bool, err error) {
 
 	var query = fmt.Sprintf(
 		`SELECT uuid FROM continent WHERE type = %d AND deleted_state != %d `,
@@ -350,7 +350,7 @@ func (db *Database) IsContinentTypeExist(tx *sql.Tx, continent *pkg_v1.Continent
 	return exist, nil
 }
 
-func (db *Database) CreateContinent(tx *sql.Tx, continent *pkg_v1.Continent) (*pkg_v1.Continent, error) {
+func (db *Database) CreateContinent(tx *sql.Tx, continent *continent.Continent) (*continent.Continent, error) {
 	if err := continent.ValidateCreate(); err != nil {
 		return nil, err
 	}
@@ -401,7 +401,7 @@ func (db *Database) CreateContinent(tx *sql.Tx, continent *pkg_v1.Continent) (*p
 }
 
 // update continent
-func (db *Database) UpdateContinent(tx *sql.Tx, continent *pkg_v1.Continent) (*pkg_v1.Continent, error) {
+func (db *Database) UpdateContinent(tx *sql.Tx, continent *continent.Continent) (*continent.Continent, error) {
 
 	if !muuid.UUIDValid(continent.Uuid) {
 		return nil, errors.New("Invalid uuid")
