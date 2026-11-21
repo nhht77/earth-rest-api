@@ -8,10 +8,9 @@ import (
 	"github.com/nhht77/earth-rest-api/pkg/handlers"
 	"github.com/nhht77/earth-rest-api/pkg/logging"
 	"github.com/nhht77/earth-rest-api/pkg/muuid"
-	"github.com/nhht77/earth-rest-api/server/config"
 )
 
-func RunHTTP(appConf *config.Config, h *Handlers) error {
+func RunHTTP(h *Handlers) http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use(RequestMiddleware(h.log))
 	router.Use(MonitorMiddleware(h.log))
@@ -36,12 +35,7 @@ func RunHTTP(appConf *config.Config, h *Handlers) error {
 	router.HandleFunc("/api/v1/city/update", h.HandleUpdateCity).Methods("PUT")
 	router.HandleFunc("/api/v1/city/delete", h.HandleDeleteCity).Methods("DELETE")
 
-	return ListenAndServe(":"+appConf.Framework.ServerPort, h, router)
-}
-
-func ListenAndServe(addr string, h *Handlers, handler http.Handler) error {
-	h.log.Infof("[http] Listen and serve at port %s", addr[1:])
-	return http.ListenAndServe(addr, handler)
+	return router
 }
 
 // statusWriter captures the response status code, which net/http does not expose.

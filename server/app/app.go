@@ -1,9 +1,12 @@
 package app
 
 import (
+	"context"
 	"flag"
 	"io"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/nhht77/earth-rest-api/pkg/logging"
 	"github.com/nhht77/earth-rest-api/server/config"
@@ -28,7 +31,7 @@ func New(log logging.Logger) *App {
 	}
 }
 
-func (a *App) Setup() error {
+func (a *App) Setup(ctx context.Context) error {
 	if err := a.Initialize(os.Args[1:]); err != nil {
 		return err
 	}
@@ -46,8 +49,28 @@ func (a *App) Setup() error {
 }
 
 // Run serves until ListenAndServe returns.
-func (a *App) Run() error {
-	return handlers.RunHTTP(a.Conf, a.Handlers)
+func (a *App) Run(ctx context.Context) error {
+	srv := &http.Server{
+		Addr:    ":" + a.Conf.Framework.ServerPort,
+		Handler: handlers.RunHTTP(a.Handlers),
+	}
+
+	errCh := make(chan error, 1)
+	go func() {
+		a.Log.Infof("Starting server at port %s", srv.Addr)
+		errCh <- srv.ListenAndServe()
+	}()
+
+	select {
+	case <-ctx.Done():
+		a.Log.Infof("Shutting down server")
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		srv.Shutdown(shutdownCtx)
+	case err := <-errCh:
+		return err
+	}
+	return nil
 }
 
 // Close releases resources — called via defer in main, even on error paths.
