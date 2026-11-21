@@ -3,14 +3,11 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
 
 	"github.com/nhht77/earth-rest-api/pkg/logging"
-	"github.com/nhht77/earth-rest-api/pkg/msql"
-	"github.com/nhht77/earth-rest-api/pkg/mstring"
 	"github.com/nhht77/earth-rest-api/server/config"
 )
 
@@ -52,54 +49,42 @@ func (db *Database) Initialize(c *config.Config) error {
 		return err
 	}
 
-	for _, migration_file := range []string{
-		"01-create-table.sql",
-		"02-trigger-function.sql",
-		"03-create-trigger.sql",
-	} {
-		statements, err := msql.ReadStatementsFromFile(migration_file)
-		if err != nil {
-			return err
-		}
-
-		for stmt_idx, stmt := range statements {
-			var (
-				started      = time.Now()
-				tableCreated = false
-			)
-
-			if has_condition := strings.Contains(stmt, "-- condition:"); has_condition {
-				var (
-					condition_value = true
-					condition_query = mstring.Between(stmt, "-- condition:", "condition --")
-				)
-				if err := db.postgres.QueryRow(condition_query).Scan(&condition_value); err != nil {
-					return fmt.Errorf("[postgre] %s #%d: %s", migration_file, stmt_idx+1, err.Error())
-				}
-				if condition_value {
-					db.Log.Infof("[postgre] %s #%d skipped due to condition result is true", migration_file, stmt_idx+1)
-					continue
-				}
-			}
-
-			// check table creation
-			if msql.IsCreateTable(stmt) && !msql.CreateTableExists(stmt, db.postgres) {
-				tableCreated = true
-			}
-
-			results, err := db.postgres.Exec(stmt)
-			if err != nil {
-				return err
-			}
-
-			changed := db.resultChange(results)
-			if changed || !tableCreated {
-				duration := time.Since(started)
-				db.Log.Infof("[postgre] %s #%d ran in %s", migration_file, stmt_idx+1, duration.String())
-			}
-		}
+	// The application does NOT own the schema — migrations run via the
+	// postgres image init (migrations/ mounted at /docker-entrypoint-initdb.d)
+	// or a dedicated migration step. Startup only verifies presence and
+	// fails fast with an actionable message.
+	if err := db.verifySchema(); err != nil {
+		return err
 	}
 
+	return nil
+}
+
+// verifySchema checks that the tables the queries expect exist.
+// It deliberately does not create or repair anything: a missing table means
+// the migration step was skipped, and the fix belongs there.
+func (db *Database) verifySchema() error {
+	const query = `
+SELECT COUNT(*)
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name IN ('city', 'country', 'continent')`
+
+	var found int
+	if err := db.postgres.QueryRow(query).Scan(&found); err != nil {
+		return fmt.Errorf("[postgre] schema verification failed: %s", err.Error())
+	}
+
+	if found < 3 {
+		return fmt.Errorf(
+			"[postgre] schema incomplete: found %d/3 expected tables (city, country, continent) — "+
+				"run the migrations first (migrations/ mounted at /docker-entrypoint-initdb.d, or 'make db-init'); "+
+				"the application no longer creates the schema",
+			found,
+		)
+	}
+
+	db.Log.Infof("[postgre] schema verified: city, country, continent present")
 	return nil
 }
 
@@ -108,12 +93,6 @@ func (db *Database) Close() error {
 		return nil
 	}
 	return db.postgres.Close()
-}
-
-func (db *Database) resultChange(result sql.Result) bool {
-	num1, _ := result.RowsAffected()
-	num2, _ := result.LastInsertId()
-	return num1 > 0 || num2 > 0
 }
 
 func (db *Database) Rollback(tx *sql.Tx) {
