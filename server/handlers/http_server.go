@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/nhht77/earth-rest-api/pkg/handlers"
 	"github.com/nhht77/earth-rest-api/pkg/logging"
-	"github.com/nhht77/earth-rest-api/pkg/mhttp"
 	"github.com/nhht77/earth-rest-api/pkg/muuid"
 	"github.com/nhht77/earth-rest-api/server/config"
 )
@@ -94,5 +94,5 @@ func RequestMiddleware(log logging.Logger) mux.MiddlewareFunc {
 }
 
 func Ping(w http.ResponseWriter, r *http.Request) {
-	mhttp.WriteBodyJSON(w, "")
+	handlers.WriteBodyJSON(w, "")
 }

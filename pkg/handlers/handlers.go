@@ -1,4 +1,4 @@
-package mhttp
+package handlers
 
 import (
 	"encoding/json"

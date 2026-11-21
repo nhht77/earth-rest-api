@@ -10,7 +10,7 @@ import (
 
 	continent "github.com/nhht77/earth-rest-api/pkg/continent"
 	country "github.com/nhht77/earth-rest-api/pkg/country"
-	"github.com/nhht77/earth-rest-api/pkg/mhttp"
+	"github.com/nhht77/earth-rest-api/pkg/handlers"
 	"github.com/nhht77/earth-rest-api/pkg/msql"
 	"github.com/nhht77/earth-rest-api/pkg/mstring"
 	muuid "github.com/nhht77/earth-rest-api/pkg/muuid"
@@ -28,14 +28,14 @@ type CountryQueryOptions struct {
 
 func CountryOptionsFromQuery(r *http.Request) (CountryQueryOptions, error) {
 	options := CountryQueryOptions{
-		WithCities:    mhttp.QueryBoolDefault(r, "with_cities", false),
-		WithContinent: mhttp.QueryBoolDefault(r, "with_continent", false),
-		Deleted:       mhttp.QueryBoolDefault(r, "deleted", false),
+		WithCities:    handlers.QueryBoolDefault(r, "with_cities", false),
+		WithContinent: handlers.QueryBoolDefault(r, "with_continent", false),
+		Deleted:       handlers.QueryBoolDefault(r, "deleted", false),
 
-		CountryUuids: mhttp.QueryList(r, "countries", ","),
+		CountryUuids: handlers.QueryList(r, "countries", ","),
 	}
 
-	continent_types, err := mhttp.QueryIntList(r, "continent_types", ",")
+	continent_types, err := handlers.QueryIntList(r, "continent_types", ",")
 	if err != nil {
 		return options, err
 	}

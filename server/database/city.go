@@ -11,7 +11,7 @@ import (
 	city "github.com/nhht77/earth-rest-api/pkg/city"
 	continent "github.com/nhht77/earth-rest-api/pkg/continent"
 	country "github.com/nhht77/earth-rest-api/pkg/country"
-	"github.com/nhht77/earth-rest-api/pkg/mhttp"
+	"github.com/nhht77/earth-rest-api/pkg/handlers"
 	"github.com/nhht77/earth-rest-api/pkg/msql"
 	"github.com/nhht77/earth-rest-api/pkg/mstring"
 	muuid "github.com/nhht77/earth-rest-api/pkg/muuid"
@@ -30,15 +30,15 @@ type CityQueryOptions struct {
 
 func CityOptionsFromQuery(r *http.Request) (CityQueryOptions, error) {
 	options := CityQueryOptions{
-		WithCountry:   mhttp.QueryBoolDefault(r, "with_country", false),
-		WithContinent: mhttp.QueryBoolDefault(r, "with_continent", false),
-		Deleted:       mhttp.QueryBoolDefault(r, "deleted", false),
+		WithCountry:   handlers.QueryBoolDefault(r, "with_country", false),
+		WithContinent: handlers.QueryBoolDefault(r, "with_continent", false),
+		Deleted:       handlers.QueryBoolDefault(r, "deleted", false),
 
-		CountryUuids: mhttp.QueryList(r, "countries", ","),
-		CityUuids:    mhttp.QueryList(r, "cities", ","),
+		CountryUuids: handlers.QueryList(r, "countries", ","),
+		CityUuids:    handlers.QueryList(r, "cities", ","),
 	}
 
-	continent_types, err := mhttp.QueryIntList(r, "continent_types", ",")
+	continent_types, err := handlers.QueryIntList(r, "continent_types", ",")
 	if err != nil {
 		return options, err
 	}
